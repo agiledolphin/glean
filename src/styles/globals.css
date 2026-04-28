@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* 浅色模式 - 米白书卷风 */
+    --background: 40 33% 96%;       /* #F5F0E8 米白 */
+    --foreground: 168 10% 26%;      /* #3D4A47 深青灰 */
+
+    --card: 40 25% 98%;
+    --card-foreground: 168 10% 26%;
+
+    --popover: 40 25% 98%;
+    --popover-foreground: 168 10% 26%;
+
+    --primary: 130 13% 62%;         /* #8FAF8F 莫兰迪绿 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 30 28% 67%;        /* #C9A98A 浅陶土 */
+    --secondary-foreground: 168 10% 26%;
+
+    --muted: 40 20% 92%;
+    --muted-foreground: 168 8% 48%;
+
+    --accent: 130 10% 88%;
+    --accent-foreground: 168 10% 26%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 15% 86%;
+    --input: 40 15% 86%;
+    --ring: 130 13% 62%;
+
+    --radius: 8px;
+  }
+
+  .dark {
+    --background: 168 12% 12%;
+    --foreground: 40 20% 88%;
+
+    --card: 168 10% 15%;
+    --card-foreground: 40 20% 88%;
+
+    --popover: 168 10% 15%;
+    --popover-foreground: 40 20% 88%;
+
+    --primary: 130 13% 55%;
+    --primary-foreground: 168 12% 12%;
+
+    --secondary: 30 20% 45%;
+    --secondary-foreground: 40 20% 88%;
+
+    --muted: 168 10% 20%;
+    --muted-foreground: 168 8% 55%;
+
+    --accent: 168 10% 22%;
+    --accent-foreground: 40 20% 88%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 168 10% 22%;
+    --input: 168 10% 22%;
+    --ring: 130 13% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Tauri drag region */
+  [data-tauri-drag-region] {
+    -webkit-app-region: drag;
+  }
+
+  /* Tag chip hover actions */
+  .tag-chip-actions {
+    display: none;
+  }
+  .tag-chip-wrapper:hover .tag-chip-actions,
+  .tag-chip-actions-pinned {
+    display: flex;
+    animation: tagActionsIn 120ms ease;
+  }
+  @keyframes tagActionsIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* 词典富文本隔离容器 */
+  .dict-content {
+    all: initial;
+    display: block;
+    font-family: Inter, "SF Pro Text", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: hsl(var(--foreground));
+  }
+
+  .dict-content * {
+    box-sizing: border-box;
+  }
+
+  /* 滚动条美化 */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+}
