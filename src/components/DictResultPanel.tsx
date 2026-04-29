@@ -57,7 +57,7 @@ export function DictResultPanel() {
         setInVocab(false);
       } else {
         const tagArr = Array.from(activeTagIds);
-        await addToVocabulary(selectedWord, tagArr[0] ?? null, 0);
+        await addToVocabulary(selectedWord, tagArr[0] ?? null);
         for (const tid of tagArr.slice(1)) {
           await addTagToWord(selectedWord, tid).catch(console.error);
         }

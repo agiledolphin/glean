@@ -141,7 +141,7 @@ export function CandidateList() {
                       !isSelected && isHighlighted && "bg-accent/60 text-accent-foreground"
                     )}
                   >
-                    <span className="truncate font-dict">{word}</span>
+                    <span className="truncate font-dict tracking-[0.015em]">{word}</span>
                   </button>
 
                   {/* Dict sub-items for the selected word */}

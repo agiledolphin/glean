@@ -25,7 +25,6 @@ export interface VocabularyItem {
   word: string;
   note: string | null;
   starred: boolean;
-  level: number;
   created_at: string;
   updated_at: string;
   tags: Tag[];

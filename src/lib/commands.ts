@@ -31,8 +31,8 @@ export const getRecentHistory = (limit: number) =>
   invoke<string[]>("get_recent_history", { limit });
 
 // --- Vocabulary commands ---
-export const addToVocabulary = (word: string, tagId: number | null = null, level: number = 0) =>
-  invoke<VocabularyItem>("add_to_vocabulary", { word, tagId, level });
+export const addToVocabulary = (word: string, tagId: number | null = null) =>
+  invoke<VocabularyItem>("add_to_vocabulary", { word, tagId });
 
 export const removeFromVocabulary = (word: string) =>
   invoke<void>("remove_from_vocabulary", { word });
@@ -43,8 +43,11 @@ export const isInVocabulary = (word: string) =>
 export const getVocabularyTags = (word: string) =>
   invoke<Tag[]>("get_vocabulary_tags", { word });
 
-export const listVocabulary = (tagId?: number) =>
-  invoke<VocabularyItem[]>("list_vocabulary", { tagId: tagId ?? null });
+export const countVocabulary = (tagId?: number, hasNote?: boolean) =>
+  invoke<number>("count_vocabulary", { tagId: tagId ?? null, hasNote: hasNote ?? false });
+
+export const listVocabulary = (tagId: number | null | undefined, limit: number, offset: number, hasNote: boolean = false) =>
+  invoke<VocabularyItem[]>("list_vocabulary", { tagId: tagId ?? null, limit, offset, hasNote });
 
 export const updateVocabularyNote = (word: string, note: string) =>
   invoke<void>("update_vocabulary_note", { word, note });
@@ -52,15 +55,15 @@ export const updateVocabularyNote = (word: string, note: string) =>
 export const toggleStar = (word: string) =>
   invoke<void>("toggle_star", { word });
 
-export const updateVocabularyLevel = (word: string, level: number) =>
-  invoke<void>("update_vocabulary_level", { word, level });
-
 // --- Tag commands ---
 export const listTags = () =>
   invoke<Tag[]>("list_tags");
 
 export const createTag = (name: string, color: string) =>
   invoke<Tag>("create_tag", { name, color });
+
+export const renameTag = (id: number, name: string) =>
+  invoke<void>("rename_tag", { id, name });
 
 export const deleteTag = (id: number) =>
   invoke<void>("delete_tag", { id });
@@ -87,6 +90,13 @@ export const playPronunciation = (word: string) =>
 
 export const playMddAudio = (key: string) =>
   invoke<void>("play_mdd_audio", { key });
+
+// --- Import commands ---
+export const previewImportFile = (path: string, skipHeader: boolean) =>
+  invoke<{ total: number; sample: string[] }>("preview_import_file", { path, skipHeader });
+
+export const importVocabularyFromFile = (path: string, tagId: number | null, skipHeader: boolean) =>
+  invoke<{ imported: number; tag_added: number; skipped: number }>("import_vocabulary_from_file", { path, tagId, skipHeader });
 
 // --- Export commands ---
 export const exportVocabulary = (tagId?: number) =>

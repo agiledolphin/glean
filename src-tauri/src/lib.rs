@@ -91,17 +91,18 @@ pub fn run() {
             lookup_word,
             get_recent_history,
             // Vocabulary
+            count_vocabulary,
             add_to_vocabulary,
             remove_from_vocabulary,
             is_in_vocabulary,
             list_vocabulary,
             update_vocabulary_note,
             toggle_star,
-            update_vocabulary_level,
             get_vocabulary_tags,
             // Tags
             list_tags,
             create_tag,
+            rename_tag,
             delete_tag,
             set_default_tag,
             add_tag_to_word,
@@ -112,6 +113,9 @@ pub fn run() {
             // Audio
             play_pronunciation,
             play_mdd_audio,
+            // Import
+            preview_import_file,
+            import_vocabulary_from_file,
             // Export
             export_vocabulary,
             // Debug

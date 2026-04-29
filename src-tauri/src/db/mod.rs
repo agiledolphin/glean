@@ -82,14 +82,6 @@ fn create_schema(conn: &Connection) -> Result<()> {
 }
 
 fn migrate_schema(conn: &Connection) -> Result<()> {
-    let has_level: bool = conn.query_row(
-        "SELECT COUNT(*) FROM pragma_table_info('vocabulary') WHERE name='level'",
-        [], |row| row.get::<_, i64>(0),
-    ).unwrap_or(0) > 0;
-    if !has_level {
-        conn.execute("ALTER TABLE vocabulary ADD COLUMN level INTEGER NOT NULL DEFAULT 0", [])?;
-    }
-
     let has_is_default: bool = conn.query_row(
         "SELECT COUNT(*) FROM pragma_table_info('tags') WHERE name='is_default'",
         [], |row| row.get::<_, i64>(0),
@@ -97,6 +89,12 @@ fn migrate_schema(conn: &Connection) -> Result<()> {
     if !has_is_default {
         conn.execute("ALTER TABLE tags ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0", [])?;
     }
+
+    conn.execute_batch("
+        CREATE INDEX IF NOT EXISTS idx_vocabulary_word_nocase ON vocabulary(word COLLATE NOCASE);
+        CREATE INDEX IF NOT EXISTS idx_vocab_tags_vid ON vocabulary_tags(vocabulary_id);
+        CREATE INDEX IF NOT EXISTS idx_vocab_tags_tid ON vocabulary_tags(tag_id);
+    ")?;
 
     Ok(())
 }
