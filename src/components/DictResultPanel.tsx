@@ -100,18 +100,16 @@ export function DictResultPanel() {
   if (!selectedWord && !isSearching) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
-        <div className="w-24 h-24 rounded-2xl bg-white shadow-md ring-1 ring-black/8 flex items-center justify-center">
-          <img src={appIcon} alt="Glean" className="w-[78px] h-[78px] object-contain" />
-        </div>
+        <img src={appIcon} alt="Glean" className="w-24 h-24 object-contain" style={{ mixBlendMode: "multiply" }} />
         <div className="flex flex-col items-center gap-2.5">
           <div className="flex items-center gap-4">
             <div className="w-10 h-px bg-border" />
-            <p className="font-serif text-sm text-foreground/50 tracking-[0.1em]">
+            <p className="font-wenkai text-sm text-foreground/50 tracking-[0.1em]">
               每一个词，都值得被拾起
             </p>
             <div className="w-10 h-px bg-border" />
           </div>
-          <p className="text-[11px] text-muted-foreground/40 italic tracking-[0.06em]">
+          <p className="font-display text-sm italic text-muted-foreground/40 tracking-[0.06em]">
             Glean the beauty of every word.
           </p>
         </div>

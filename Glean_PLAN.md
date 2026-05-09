@@ -217,10 +217,12 @@ CREATE TABLE dictionaries (
 | 属性 | 规范 |
 |------|------|
 | 整体风格 | 简洁、淡雅、书卷气 |
-| 主色调 | 莫兰迪绿 `#8FAF8F` / 米白 `#F5F0E8` |
-| 辅助色 | 浅陶土 `#C9A98A` / 深青灰 `#3D4A47` |
-| 字体（中文） | 思源宋体 / 系统衬线字体 |
-| 字体（英文/词典） | Inter / SF Pro |
+| 主色调 | Flexoki Light — 暖纸白 `#fffcf0` / 深蓝 `#205ea6` |
+| 辅助色 | 蓝/青/紫/绿/橙 Flexoki accent 色系 |
+| 字体（中文标题） | 思源宋体 |
+| 字体（中文 Slogan） | 霞鹜文楷（LXGW WenKai TC）|
+| 字体（英文展示） | Cormorant Garamond |
+| 字体（词典内容） | Inter / SF Pro |
 | 圆角 | `8px`（卡片）/ `4px`（输入框）|
 | 动效 | 轻微淡入淡出，避免过度动画 |
 
@@ -330,6 +332,11 @@ CREATE TABLE dictionaries (
 - [x] 移除星级（1-5）评分，删除 `level` 数据库字段及相关代码
 - [x] 生词本列表 UI 精简：去除 tag 标签显示、行距对齐、虚拟列表动态行高
 - [x] 候选词列表字体与间距优化
+- [x] 查词历史导航：搜索框左侧前进/后退按钮，会话内浏览器式栈导航
+- [x] 整体配色重构：Flexoki Light 纸墨风，替换原莫兰迪绿书卷风
+- [x] 字体体系重构：霞鹜文楷（Slogan）+ Cormorant Garamond（英文展示）+ 思源宋体（中文标题）
+- [x] 关于页重设计：图标融合背景（mix-blend-mode）、双语名称、Slogan 横线排版
+- [x] Logo 无边框化：全局 mix-blend-mode: multiply，图标直接融入暖纸背景
 - [ ] 设置页完善（发音偏好、主题等）
 
 ### Phase 5 — 进阶功能（后续迭代）

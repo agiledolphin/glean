@@ -143,7 +143,7 @@ export function VocabularyPage() {
 
   const handleAddTag = async () => {
     if (!newTagName.trim()) return;
-    const colors = ["#8FAF8F", "#C9A98A", "#9BB5C8", "#B8A8C8", "#C8B8A8"];
+    const colors = ["#4385be", "#3aa99f", "#8b7ec8", "#879a39", "#da702c"];
     const color = colors[Math.floor(Math.random() * colors.length)];
     await createTag(newTagName.trim(), color);
     setNewTagName("");
@@ -217,7 +217,7 @@ export function VocabularyPage() {
       let finalTagId: number | null = null;
       if (tagChoice === "new") {
         if (!importNewTagName.trim()) { setIsImporting(false); return; }
-        const colors = ["#8FAF8F", "#C9A98A", "#9BB5C8", "#B8A8C8", "#C8B8A8"];
+        const colors = ["#4385be", "#3aa99f", "#8b7ec8", "#879a39", "#da702c"];
         const color = colors[Math.floor(Math.random() * colors.length)];
         const newTag = await createTag(importNewTagName.trim(), color);
         finalTagId = newTag.id;

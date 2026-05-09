@@ -6,8 +6,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 const AVATAR_COLORS = [
-  "bg-blue-500", "bg-emerald-500", "bg-violet-500",
-  "bg-orange-500", "bg-rose-500", "bg-cyan-500",
+  "bg-[#4385be]", "bg-[#3aa99f]", "bg-[#8b7ec8]",
+  "bg-[#da702c]", "bg-[#ce5d97]", "bg-[#879a39]",
 ];
 
 function hashIndex(str: string, len: number) {
@@ -52,7 +52,9 @@ export function CandidateList() {
     if (highlightedIndex >= 0) {
       const el = itemRefs.current[highlightedIndex];
       el?.scrollIntoView({ block: "nearest" });
-      el?.focus();
+      if (document.activeElement?.id !== "search-input") {
+        el?.focus();
+      }
     }
   }, [highlightedIndex]);
 

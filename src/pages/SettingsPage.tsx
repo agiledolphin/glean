@@ -1,5 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Plus, GripVertical, Trash2, Eye, EyeOff } from "lucide-react";
+import { getVersion } from "@tauri-apps/api/app";
+import appIcon from "@/assets/app-icon.png";
 import { useAppStore } from "@/store";
 import {
   listDictionaries, importDictionary,
@@ -12,37 +14,44 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import type { Dictionary } from "@/types";
 
+interface GhostState {
+  dict: Dictionary;
+  x: number;
+  y: number;
+  width: number;
+  offsetX: number;
+  offsetY: number;
+}
+
 export function SettingsPage() {
   const { dictionaries, setDictionaries } = useAppStore();
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
-  const dragIdx = useRef<number | null>(null);
+  const [appVersion, setAppVersion] = useState("");
+
+  useEffect(() => { getVersion().then(setAppVersion).catch(() => {}); }, []);
+
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
+  const [insertAfterIdx, setInsertAfterIdx] = useState<number | null>(null);
+  const [ghost, setGhost] = useState<GhostState | null>(null);
+
+  const draggingRef = useRef<number | null>(null);
+  const insertAfterRef = useRef<number | null>(null);
+  const ghostRef = useRef<GhostState | null>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   const loadDicts = () => listDictionaries().then(setDictionaries).catch(() => {});
-
   useEffect(() => { loadDicts(); }, []);
 
   const handleImport = async () => {
     setImportError(null);
-    setDebugInfo(null);
-    let lastFilePath: string | null = null;
     try {
       setImporting(true);
-      const file = await open({
-        directory: true,
-        multiple: false,
-      });
-      // Tauri 2 returns string | string[] | null
-      lastFilePath = Array.isArray(file) ? (file[0] ?? null) : file;
-      if (lastFilePath) {
-        await importDictionary(lastFilePath);
-        loadDicts();
-      }
+      const file = await open({ directory: true, multiple: false });
+      const path = Array.isArray(file) ? (file[0] ?? null) : file;
+      if (path) { await importDictionary(path); loadDicts(); }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setImportError(msg);
-      console.error("Import failed:", e);
+      setImportError(e instanceof Error ? e.message : String(e));
     } finally {
       setImporting(false);
     }
@@ -58,49 +67,116 @@ export function SettingsPage() {
     loadDicts();
   };
 
-  const handleDragStart = (idx: number) => { dragIdx.current = idx; };
-  const handleDrop = async (targetIdx: number) => {
-    if (dragIdx.current === null || dragIdx.current === targetIdx) return;
-    const reordered = [...dictionaries];
-    const [moved] = reordered.splice(dragIdx.current, 1);
-    reordered.splice(targetIdx, 0, moved);
-    for (let i = 0; i < reordered.length; i++) {
-      await updateDictionaryOrder(reordered[i].id, i).catch(() => {});
-    }
-    loadDicts();
-    dragIdx.current = null;
-  };
+  const handleGripMouseDown = useCallback((e: React.MouseEvent, idx: number) => {
+    e.preventDefault();
+    const snapshot = [...dictionaries];
+    const dict = snapshot[idx];
+
+    // Measure the li element for ghost sizing and grab offset
+    const liEl = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-drag-idx]");
+    const rect = liEl?.getBoundingClientRect();
+    const width = rect?.width ?? 400;
+    const offsetX = rect ? e.clientX - rect.left : 0;
+    const offsetY = rect ? e.clientY - rect.top : 0;
+
+    const initialGhost: GhostState = {
+      dict,
+      x: e.clientX - offsetX,
+      y: e.clientY - offsetY,
+      width,
+      offsetX,
+      offsetY,
+    };
+    ghostRef.current = initialGhost;
+    draggingRef.current = idx;
+    insertAfterRef.current = idx - 1;
+    setDraggingIdx(idx);
+    setInsertAfterIdx(idx - 1);
+    setGhost(initialGhost);
+
+    const onMouseMove = (ev: MouseEvent) => {
+      // Update ghost position
+      const next: GhostState = {
+        ...ghostRef.current!,
+        x: ev.clientX - ghostRef.current!.offsetX,
+        y: ev.clientY - ghostRef.current!.offsetY,
+      };
+      ghostRef.current = next;
+      setGhost({ ...next });
+
+      // Update insertion indicator
+      if (!listRef.current) return;
+      const items = Array.from(
+        listRef.current.querySelectorAll<HTMLElement>("[data-drag-idx]")
+      );
+      let after = items.length - 1;
+      for (let i = 0; i < items.length; i++) {
+        const r = items[i].getBoundingClientRect();
+        if (ev.clientY < r.top + r.height / 2) {
+          after = i - 1;
+          break;
+        }
+      }
+      if (after !== insertAfterRef.current) {
+        insertAfterRef.current = after;
+        setInsertAfterIdx(after);
+      }
+    };
+
+    const onMouseUp = async () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+      const from = draggingRef.current;
+      const after = insertAfterRef.current;
+      draggingRef.current = null;
+      insertAfterRef.current = null;
+      ghostRef.current = null;
+      setDraggingIdx(null);
+      setInsertAfterIdx(null);
+      setGhost(null);
+      if (from === null || after === null) return;
+      const to = after < from ? after + 1 : after;
+      if (to === from) return;
+      const reordered = [...snapshot];
+      const [moved] = reordered.splice(from, 1);
+      reordered.splice(to, 0, moved);
+      setDictionaries(reordered);
+      for (let i = 0; i < reordered.length; i++) {
+        await updateDictionaryOrder(reordered[i].id, i).catch(() => {});
+      }
+      loadDicts();
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }, [dictionaries]);
+
+  const linePosition = useMemo((): number | null => {
+    if (draggingIdx === null || insertAfterIdx === null) return null;
+    const to = insertAfterIdx < draggingIdx ? insertAfterIdx + 1 : insertAfterIdx;
+    if (to === draggingIdx) return null;
+    return to;
+  }, [draggingIdx, insertAfterIdx, dictionaries.length]);
 
   return (
     <ScrollArea className="flex-1">
       <div className="max-w-xl mx-auto px-6 py-6 space-y-8">
 
-        {/* Dictionary section */}
         <section>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-base font-medium">词典管理</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">拖拽可调整词典显示顺序</p>
+              <p className="text-xs text-muted-foreground mt-0.5">拖拽把手可调整词典显示顺序</p>
             </div>
-            <Button
-              size="sm"
-              className="gap-1.5 text-xs h-8"
-              onClick={handleImport}
-              disabled={importing}
-            >
+            <Button size="sm" className="gap-1.5 text-xs h-8" onClick={handleImport} disabled={importing}>
               <Plus size={13} />
               {importing ? "导入中..." : "导入词典"}
             </Button>
           </div>
 
           {importError && (
-            <div className="mb-3 rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive space-y-1">
-              <p><span className="font-medium">导入失败：</span>{importError}</p>
-              {debugInfo && (
-                <pre className="mt-2 text-[10px] leading-relaxed text-foreground/70 whitespace-pre-wrap break-all bg-muted/40 rounded p-2 max-h-48 overflow-auto">
-                  {debugInfo}
-                </pre>
-              )}
+            <div className="mb-3 rounded-md bg-destructive/10 border border-destructive/30 px-3 py-2 text-xs text-destructive">
+              <span className="font-medium">导入失败：</span>{importError}
             </div>
           )}
 
@@ -114,47 +190,41 @@ export function SettingsPage() {
               <p className="text-xs text-muted-foreground mt-1 opacity-60">选择包含 .mdx 的目录</p>
             </div>
           ) : (
-            <ul className="space-y-1.5">
+            <ul ref={listRef} className="select-none" style={{ userSelect: "none" }}>
               {dictionaries.map((dict, idx) => (
-                <li
-                  key={dict.id}
-                  draggable
-                  onDragStart={() => handleDragStart(idx)}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => handleDrop(idx)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg border border-border p-3",
-                    "hover:border-primary/40 transition-colors cursor-grab active:cursor-grabbing",
-                    !dict.enabled && "opacity-50"
+                <li key={dict.id} data-drag-idx={idx} className="relative">
+                  {linePosition === idx && (
+                    <div className="absolute -top-px left-0 right-0 h-0.5 bg-primary rounded-full z-10 pointer-events-none" />
                   )}
-                >
-                  <GripVertical size={14} className="text-muted-foreground shrink-0" />
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{dict.name}</p>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {dict.file_path.split("/").pop()}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => handleToggle(dict)}
-                      title={dict.enabled ? "禁用" : "启用"}
-                    >
-                      {dict.enabled ? <Eye size={13} /> : <EyeOff size={13} />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleRemove(dict.id)}
-                    >
-                      <Trash2 size={13} />
-                    </Button>
+                  {linePosition === dictionaries.length && idx === dictionaries.length - 1 && (
+                    <div className="absolute -bottom-px left-0 right-0 h-0.5 bg-primary rounded-full z-10 pointer-events-none" />
+                  )}
+                  <div className={cn(
+                    "flex items-center gap-3 rounded-lg border border-border p-3 mb-1.5 transition-opacity duration-100",
+                    draggingIdx === idx && "opacity-30",
+                  )}>
+                    <GripVertical
+                      size={14}
+                      className="text-muted-foreground shrink-0 cursor-grab hover:text-foreground transition-colors"
+                      onMouseDown={(e) => handleGripMouseDown(e, idx)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{dict.name}</p>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {dict.file_path.split("/").pop()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-7 w-7"
+                        onClick={() => handleToggle(dict)} title={dict.enabled ? "禁用" : "启用"}>
+                        {dict.enabled ? <Eye size={13} /> : <EyeOff size={13} />}
+                      </Button>
+                      <Button variant="ghost" size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleRemove(dict.id)}>
+                        <Trash2 size={13} />
+                      </Button>
+                    </div>
                   </div>
                 </li>
               ))}
@@ -164,19 +234,57 @@ export function SettingsPage() {
 
         <Separator />
 
-        {/* About */}
         <section>
-          <h2 className="text-base font-medium mb-4">关于</h2>
-          <div className="rounded-lg border border-border p-4 text-center">
-            <p className="text-lg font-serif text-foreground">🌿 拾词 · Glean</p>
-            <p className="text-xs text-muted-foreground mt-1">v0.1.0</p>
-            <p className="text-xs text-muted-foreground mt-3 italic">
-              "每一词，都值得被拾起。"
-            </p>
+          <h2 className="text-base font-medium mb-6">关于</h2>
+          <div className="flex flex-col gap-6 py-2">
+            {/* Icon + names row */}
+            <div className="flex items-center justify-center gap-5">
+              <img src={appIcon} alt="拾词" className="w-20 h-20 shrink-0 object-contain" style={{ mixBlendMode: "multiply" }} />
+              <div className="flex flex-col gap-0.5 items-center">
+                <p className="text-xl font-serif font-medium tracking-[0.06em] text-foreground leading-tight">拾词</p>
+                <p className="font-display text-sm tracking-[0.3em] uppercase text-muted-foreground">Glean</p>
+                {appVersion && (
+                  <p className="text-[11px] text-muted-foreground/50 tracking-wider mt-1">v{appVersion}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Slogans */}
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-px bg-border" />
+                <p className="font-wenkai text-sm text-muted-foreground whitespace-nowrap tracking-[0.05em]">每一个词，都值得被拾起</p>
+                <div className="w-8 h-px bg-border" />
+              </div>
+              <p className="font-display text-sm italic text-muted-foreground/60 tracking-[0.06em]">
+                Glean the beauty of every word.
+              </p>
+            </div>
           </div>
         </section>
 
       </div>
+
+      {/* Drag ghost — follows cursor */}
+      {ghost && (
+        <div
+          className="fixed pointer-events-none z-50 rounded-lg border border-primary/40 bg-background/95 backdrop-blur-sm shadow-lg p-3 flex items-center gap-3"
+          style={{
+            left: ghost.x,
+            top: ghost.y,
+            width: ghost.width,
+            transform: "rotate(1.5deg) scale(1.02)",
+          }}
+        >
+          <GripVertical size={14} className="text-primary shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{ghost.dict.name}</p>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
+              {ghost.dict.file_path.split("/").pop()}
+            </p>
+          </div>
+        </div>
+      )}
     </ScrollArea>
   );
 }

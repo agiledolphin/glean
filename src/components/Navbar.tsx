@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import appIcon from "@/assets/app-icon.png";
-import { Book, BarChart3, Settings, Search, Loader2 } from "lucide-react";
+import { Book, BarChart3, Settings, Search, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
 import { useAppStore } from "@/store";
 import { searchCandidates, getRecentHistory, areDictsReady, getDictIcons } from "@/lib/commands";
@@ -15,11 +15,27 @@ export function Navbar() {
     searchQuery, setSearchQuery,
     candidates, setCandidates,
     highlightedIndex, setHighlightedIndex,
-    setSelectedWord,
+    selectedWord, setSelectedWord,
     currentPage, setCurrentPage,
     dictsReady, setDictsReady,
     setDictIcons,
   } = useAppStore();
+
+  // Nav history: use refs for logic (no stale closures), state only to trigger button re-render
+  const navStackRef = useRef<string[]>([]);
+  const navIndexRef = useRef(-1);
+  const isNavigating = useRef(false);
+  const [navButtons, setNavButtons] = useState({ canBack: false, canForward: false });
+
+  const syncNavButtons = () => setNavButtons({
+    canBack: navIndexRef.current > 0,
+    canForward: navIndexRef.current < navStackRef.current.length - 1,
+  });
+
+  const [focused, setFocused] = useState(false);
+  const [scrollMode, setScrollMode] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const loadIcons = () => getDictIcons().then(setDictIcons).catch(() => {});
@@ -30,18 +46,15 @@ export function Navbar() {
     return () => { unlisten.then(fn => fn()); };
   }, [setDictsReady, setDictIcons]);
 
-  const [focused, setFocused] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
   // Auto-focus and load initial history once dicts are ready
   useEffect(() => {
     if (!dictsReady) return;
     setTimeout(() => inputRef.current?.focus(), 0);
     getRecentHistory(50).then(setCandidates).catch(() => {});
   }, [dictsReady]);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleInput = useCallback((value: string) => {
+    setScrollMode(false);
     setSearchQuery(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
@@ -58,6 +71,43 @@ export function Navbar() {
       }
     }, 120);
   }, [setSearchQuery, setCandidates]);
+
+  // Push to nav stack whenever a word is selected (skips navigation-triggered selections)
+  useEffect(() => {
+    if (!selectedWord) return;
+    if (isNavigating.current) {
+      isNavigating.current = false;
+      syncNavButtons();
+      return;
+    }
+    const truncated = navStackRef.current.slice(0, navIndexRef.current + 1);
+    truncated.push(selectedWord);
+    navStackRef.current = truncated;
+    navIndexRef.current = truncated.length - 1;
+    syncNavButtons();
+  }, [selectedWord]);
+
+  const handleNavBack = useCallback(() => {
+    if (navIndexRef.current <= 0) return;
+    const newIndex = navIndexRef.current - 1;
+    const word = navStackRef.current[newIndex];
+    isNavigating.current = true;
+    navIndexRef.current = newIndex;
+    handleInput(word);
+    setSelectedWord(null);
+    setTimeout(() => setSelectedWord(word), 0);
+  }, [handleInput, setSelectedWord]);
+
+  const handleNavForward = useCallback(() => {
+    if (navIndexRef.current >= navStackRef.current.length - 1) return;
+    const newIndex = navIndexRef.current + 1;
+    const word = navStackRef.current[newIndex];
+    isNavigating.current = true;
+    navIndexRef.current = newIndex;
+    handleInput(word);
+    setSelectedWord(null);
+    setTimeout(() => setSelectedWord(word), 0);
+  }, [handleInput, setSelectedWord]);
 
   useEffect(() => {
     if (currentPage === "search" && focused) {
@@ -88,13 +138,22 @@ export function Navbar() {
     getCurrentWindow().startDragging().catch(() => {});
   }, []);
 
+  const scrollDictPanel = (dir: "up" | "down") => {
+    const panel = document.getElementById("dict-panel");
+    const viewport = panel?.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
+    viewport?.scrollBy({ top: dir === "down" ? 120 : -120, behavior: "smooth" });
+  };
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown") {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
-      setHighlightedIndex(Math.min(highlightedIndex + 1, candidates.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlightedIndex(Math.max(highlightedIndex - 1, 0));
+      if (scrollMode) {
+        scrollDictPanel(e.key === "ArrowDown" ? "down" : "up");
+      } else {
+        e.key === "ArrowDown"
+          ? setHighlightedIndex(Math.min(highlightedIndex + 1, candidates.length - 1))
+          : setHighlightedIndex(Math.max(highlightedIndex - 1, 0));
+      }
     } else if (e.key === "Enter") {
       const word = highlightedIndex >= 0 && candidates[highlightedIndex]
         ? candidates[highlightedIndex]
@@ -102,13 +161,15 @@ export function Navbar() {
       if (word) {
         setSelectedWord(word);
         setHighlightedIndex(Math.max(0, candidates.indexOf(word)));
+        setScrollMode(true);
+        inputRef.current?.select();
       }
-      document.getElementById("candidate-list")?.focus();
     } else if (e.key === "Escape") {
+      setScrollMode(false);
       handleInput("");
       inputRef.current?.select();
     }
-  }, [searchQuery, candidates, highlightedIndex, setHighlightedIndex, setSelectedWord, handleInput]);
+  }, [searchQuery, candidates, highlightedIndex, scrollMode, setHighlightedIndex, setSelectedWord, handleInput]);
 
   const navItems: { page: Page; icon: React.ReactNode; label: string }[] = [
     { page: "vocabulary", icon: <Book size={16} />, label: "生词本" },
@@ -128,9 +189,7 @@ export function Navbar() {
         onClick={() => setCurrentPage("search")}
         data-tauri-drag-region="false"
       >
-        <div className="w-[32px] h-[32px] shrink-0 rounded-lg bg-white shadow-sm ring-1 ring-black/8 flex items-center justify-center">
-          <img src={appIcon} alt="Glean" className="w-[26px] h-[26px] object-contain" />
-        </div>
+        <img src={appIcon} alt="Glean" className="w-[32px] h-[32px] shrink-0 object-contain" style={{ mixBlendMode: "multiply" }} />
         <div className="flex flex-col leading-none gap-[4px]">
           <span className="font-serif text-[15px] font-medium text-foreground tracking-[0.05em] group-hover:text-foreground transition-colors">
             拾词
@@ -141,9 +200,30 @@ export function Navbar() {
         </div>
       </button>
 
-      {/* Search bar - centered */}
-      <div className="flex-1 max-w-md mx-auto relative" data-tauri-drag-region="false">
-        <div className="relative">
+      {/* Search bar with history nav - centered */}
+      <div className="flex-1 max-w-md mx-auto flex items-center gap-1" data-tauri-drag-region="false">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleNavBack}
+          disabled={!navButtons.canBack}
+          className="h-7 w-7 shrink-0 text-muted-foreground"
+          tabIndex={-1}
+        >
+          <ChevronLeft size={15} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleNavForward}
+          disabled={!navButtons.canForward}
+          className="h-7 w-7 shrink-0 text-muted-foreground"
+          tabIndex={-1}
+        >
+          <ChevronRight size={15} />
+        </Button>
+
+        <div className="relative flex-1">
           {dictsReady
             ? <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             : <Loader2 size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none animate-spin" />
@@ -183,7 +263,6 @@ export function Navbar() {
             <span className="hidden sm:inline">{label}</span>
           </Button>
         ))}
-
       </nav>
     </header>
   );

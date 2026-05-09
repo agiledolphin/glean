@@ -55,6 +55,8 @@ export default {
         sans: ["Inter", "SF Pro Display", "system-ui", "sans-serif"],
         serif: ["Source Han Serif CN", "Noto Serif CJK SC", "Georgia", "serif"],
         dict: ["-apple-system", "BlinkMacSystemFont", "Inter", "SF Pro Text", "system-ui", "sans-serif"],
+        display: ["Cormorant Garamond", "Georgia", "serif"],
+        wenkai: ["LXGW WenKai TC", "Source Han Serif CN", "serif"],
       },
     },
   },

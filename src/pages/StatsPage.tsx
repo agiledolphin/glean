@@ -92,7 +92,7 @@ export function StatsPage() {
                 }}
                 cursor={{ fill: "hsl(var(--accent))" }}
               />
-              <Bar dataKey="count" fill="#8FAF8F" radius={[3, 3, 0, 0]} name="查询次数" />
+              <Bar dataKey="count" fill="#4385be" radius={[3, 3, 0, 0]} name="查询次数" />
             </BarChart>
           </ResponsiveContainer>
         </div>

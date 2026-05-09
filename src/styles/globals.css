@@ -4,34 +4,34 @@
 
 @layer base {
   :root {
-    /* 浅色模式 - 米白书卷风 */
-    --background: 40 33% 96%;       /* #F5F0E8 米白 */
-    --foreground: 168 10% 26%;      /* #3D4A47 深青灰 */
+    /* 浅色模式 - Flexoki Light 纸墨风 */
+    --background: 48 100% 97%;      /* #fffcf0 暖白纸 */
+    --foreground: 0 3% 6%;          /* #100f0f 浓黑墨 */
 
-    --card: 40 25% 98%;
-    --card-foreground: 168 10% 26%;
+    --card: 50 28% 92%;             /* #f2f0e5 */
+    --card-foreground: 0 3% 6%;
 
-    --popover: 40 25% 98%;
-    --popover-foreground: 168 10% 26%;
+    --popover: 50 28% 92%;
+    --popover-foreground: 0 3% 6%;
 
-    --primary: 130 13% 62%;         /* #8FAF8F 莫兰迪绿 */
+    --primary: 215 68% 39%;         /* #205ea6 深蓝 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 30 28% 67%;        /* #C9A98A 浅陶土 */
-    --secondary-foreground: 168 10% 26%;
+    --secondary: 44 12% 83%;        /* #dad8ce */
+    --secondary-foreground: 0 3% 6%;
 
-    --muted: 40 20% 92%;
-    --muted-foreground: 168 8% 48%;
+    --muted: 46 17% 87%;            /* #e6e4d9 */
+    --muted-foreground: 40 3% 42%;  /* #6f6e69 */
 
-    --accent: 130 10% 88%;
-    --accent-foreground: 168 10% 26%;
+    --accent: 46 17% 87%;           /* #e6e4d9 */
+    --accent-foreground: 0 3% 6%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 3 58% 42%;       /* #af3029 */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 40 15% 86%;
-    --input: 40 15% 86%;
-    --ring: 130 13% 62%;
+    --border: 44 12% 83%;           /* #dad8ce */
+    --input: 44 12% 83%;
+    --ring: 215 68% 39%;
 
     --radius: 8px;
   }
