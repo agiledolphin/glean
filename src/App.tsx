@@ -13,7 +13,7 @@ export default function App() {
 
   useEffect(() => {
     listDictionaries().then(setDictionaries).catch(() => {});
-  }, []);
+  }, [setDictionaries]);
 
   // Tab cycles only between the 3 focus zones
   useEffect(() => {

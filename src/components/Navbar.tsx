@@ -51,7 +51,7 @@ export function Navbar() {
     if (!dictsReady) return;
     setTimeout(() => inputRef.current?.focus(), 0);
     getRecentHistory(50).then(setCandidates).catch(() => {});
-  }, [dictsReady]);
+  }, [dictsReady, setCandidates]);
 
   const handleInput = useCallback((value: string) => {
     setScrollMode(false);
@@ -109,10 +109,12 @@ export function Navbar() {
     setTimeout(() => setSelectedWord(word), 0);
   }, [handleInput, setSelectedWord]);
 
+  // Only re-run when focus changes; currentPage/handleInput/searchQuery are read at call time
   useEffect(() => {
     if (currentPage === "search" && focused) {
       handleInput(searchQuery);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focused]);
 
   // "/" shortcut: focus search input and select all existing content

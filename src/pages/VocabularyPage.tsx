@@ -75,7 +75,7 @@ export function VocabularyPage() {
     setWords(items);
     setTotalCount(count);
     setTags(tagList);
-  }, [selectedTagId, hasNoteFilter]);
+  }, [selectedTagId, hasNoteFilter, setTags]);
 
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
@@ -88,6 +88,7 @@ export function VocabularyPage() {
     }
   }, [isLoadingMore, hasMore, selectedTagId, words.length, hasNoteFilter]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadInitial(); }, [selectedTagId, hasNoteFilter]);
 
   // Trigger load more when virtualizer reaches near end of loaded items
@@ -98,6 +99,7 @@ export function VocabularyPage() {
     if (lastVisible.index >= words.length - 30) {
       loadMore();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowVirtualizer.getVirtualItems()]);
 
   // Clear search input and dict panel when entering vocabulary page
@@ -106,13 +108,15 @@ export function VocabularyPage() {
     useAppStore.getState().setCandidates([]);
     setSelectedWord(null);
     setDictResults([]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync note text when selected item changes
+  // Sync note text when selected item changes; intentionally exclude note to avoid re-sync while editing
   useEffect(() => {
     setNoteText(selectedItem?.note ?? "");
     setNoteDirty(false);
     setNoteExpanded(!!(selectedItem?.note));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedItem?.id]);
 
   const handleNoteSave = async () => {

@@ -41,6 +41,7 @@ export function SettingsPage() {
   const listRef = useRef<HTMLUListElement>(null);
 
   const loadDicts = () => listDictionaries().then(setDictionaries).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadDicts(); }, []);
 
   const handleImport = async () => {
@@ -149,6 +150,7 @@ export function SettingsPage() {
 
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dictionaries]);
 
   const linePosition = useMemo((): number | null => {
@@ -156,7 +158,7 @@ export function SettingsPage() {
     const to = insertAfterIdx < draggingIdx ? insertAfterIdx + 1 : insertAfterIdx;
     if (to === draggingIdx) return null;
     return to;
-  }, [draggingIdx, insertAfterIdx, dictionaries.length]);
+  }, [draggingIdx, insertAfterIdx]);
 
   return (
     <ScrollArea className="flex-1">

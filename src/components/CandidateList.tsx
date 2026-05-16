@@ -101,6 +101,7 @@ export function CandidateList() {
     if (selectedWord) {
       handleSelect(selectedWord);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedWord]);
 
   const isHistory = !searchQuery.trim();
