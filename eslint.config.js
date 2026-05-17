@@ -33,6 +33,8 @@ export default [
       '@typescript-eslint/no-unused-expressions': ['error', { allowTernary: true }],
       // Allow empty catch blocks (intentional fire-and-forget error suppression)
       'no-empty': ['error', { allowEmptyCatch: true }],
+      // Project does not use React Compiler; incompatible-library check is not relevant
+      'react-hooks/incompatible-library': 'off',
     },
   },
 ]

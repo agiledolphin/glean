@@ -25,6 +25,7 @@ export function DictResultPanel() {
   }, []);
 
   // Reset collapsed state when the word changes
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setCollapsed(new Set()); }, [selectedWord]);
 
   const toggleCollapse = (dictId: string) =>

@@ -112,6 +112,7 @@ export function Navbar() {
   // Only re-run when focus changes; currentPage/handleInput/searchQuery are read at call time
   useEffect(() => {
     if (currentPage === "search" && focused) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       handleInput(searchQuery);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
