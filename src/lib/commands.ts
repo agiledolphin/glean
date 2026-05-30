@@ -98,9 +98,19 @@ export const previewImportFile = (path: string, skipHeader: boolean) =>
 export const importVocabularyFromFile = (path: string, tagId: number | null, skipHeader: boolean) =>
   invoke<{ imported: number; tag_added: number; skipped: number }>("import_vocabulary_from_file", { path, tagId, skipHeader });
 
+// --- Review commands ---
+export const getReviewSession = () =>
+  invoke<import("@/types").ReviewCard[]>("get_review_session");
+
+export const submitReview = (word: string, score: number) =>
+  invoke<void>("submit_review", { word, score });
+
+export const getReviewStats = () =>
+  invoke<import("@/types").ReviewStats>("get_review_stats");
+
 // --- Export commands ---
-export const exportVocabulary = (tagId?: number) =>
-  invoke<string>("export_vocabulary", { tagId: tagId ?? null });
+export const exportVocabulary = (tagId: number | null | undefined, path: string) =>
+  invoke<void>("export_vocabulary", { tagId: tagId ?? null, path });
 
 export const getDictIcons = () =>
   invoke<Record<string, string>>("get_dict_icons");

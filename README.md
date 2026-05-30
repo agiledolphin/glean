@@ -15,7 +15,8 @@
 - **Shadow DOM 样式隔离** — 每条词典结果在独立 Shadow DOM 中渲染，词典间 CSS 完全隔离
 - **MDD 资源渲染** — 图片、发音图标通过 `mdd://` 自定义协议直接加载，无需解压
 - **词典内音频播放** — 拦截 `sound://` 链接，点击即播放 MDD 内嵌音频；无音频时降级至系统 TTS
-- **生词本管理** — 一键收藏、自定义标签、用户备注、Markdown 导出
+- **生词本管理** — 一键收藏、自定义标签、用户备注、Markdown 导出（平铺格式，原生存储对话框）
+- **背单词** — SM-2 间隔重复算法，每次 20 词，四档评分，翻牌显示词典原文
 - **查询统计** — 记录查询历史，展示高频词与查询趋势图
 - **词典子目录** — 候选列表中展示当前词的来源词典，点击跳转对应区块
 - **历史记录导航** — 搜索框左侧前进/后退按钮，会话内浏览器式查词历史切换
@@ -87,7 +88,7 @@ npm run tauri build
 
 | 层级 | 技术 |
 |------|------|
-| 前端 | React 18 + TypeScript + Tailwind CSS + shadcn/ui |
+| 前端 | React 19 + TypeScript 6 + Vite 8 + Tailwind CSS 4 + shadcn/ui |
 | 后端 | Rust + Tauri 2.x |
 | 数据库 | SQLite（rusqlite，本地存储） |
 | 状态管理 | Zustand |
@@ -113,6 +114,11 @@ npm run tauri build
 ---
 
 ## 版本历史
+
+### v0.4.0
+- **背单词**：SM-2 间隔重复算法，每次最多 20 词（优先到期词，不足时以最新生词补充），四档评分，翻牌显示完整词典原文
+- Markdown 导出重构：平铺格式 `word  #tag1 #tag2`，原生 Save 对话框自由选择路径与文件名
+- 依赖全面升级：React 19、TypeScript 6、Vite 8、Tailwind CSS 4（CSS-first 配置）、ESLint 10
 
 ### v0.3.7
 - 整体配色重构：采用 Flexoki Light 纸墨风，暖白纸底色配深蓝主色，替换原莫兰迪绿书卷风

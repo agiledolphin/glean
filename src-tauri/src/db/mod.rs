@@ -94,6 +94,16 @@ fn migrate_schema(conn: &Connection) -> Result<()> {
         CREATE INDEX IF NOT EXISTS idx_vocabulary_word_nocase ON vocabulary(word COLLATE NOCASE);
         CREATE INDEX IF NOT EXISTS idx_vocab_tags_vid ON vocabulary_tags(vocabulary_id);
         CREATE INDEX IF NOT EXISTS idx_vocab_tags_tid ON vocabulary_tags(tag_id);
+
+        CREATE TABLE IF NOT EXISTS review_cards (
+            word          TEXT PRIMARY KEY REFERENCES vocabulary(word) ON DELETE CASCADE,
+            interval      INTEGER NOT NULL DEFAULT 1,
+            ease_factor   REAL NOT NULL DEFAULT 2.5,
+            repetitions   INTEGER NOT NULL DEFAULT 0,
+            due_date      TEXT NOT NULL DEFAULT (date('now')),
+            last_reviewed TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_review_due ON review_cards(due_date);
     ")?;
 
     Ok(())

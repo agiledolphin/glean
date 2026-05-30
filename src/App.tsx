@@ -5,6 +5,7 @@ import { SearchPage } from "@/pages/SearchPage";
 import { VocabularyPage } from "@/pages/VocabularyPage";
 import { StatsPage } from "@/pages/StatsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { ReviewPage } from "@/pages/ReviewPage";
 import { listDictionaries } from "@/lib/commands";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -43,6 +44,7 @@ export default function App() {
           {currentPage === "vocabulary" && <VocabularyPage />}
           {currentPage === "stats" && <StatsPage />}
           {currentPage === "settings" && <SettingsPage />}
+          {currentPage === "review" && <ReviewPage />}
         </main>
       </div>
     </TooltipProvider>

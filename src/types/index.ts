@@ -53,4 +53,16 @@ export interface QueryHistory {
 
 export type SortOrder = "alpha" | "created_at" | "query_count" | "updated_at";
 export type ViewMode = "list" | "grid";
-export type Page = "search" | "vocabulary" | "stats" | "settings";
+export type Page = "search" | "vocabulary" | "stats" | "settings" | "review";
+
+export interface ReviewCard {
+  word: string;
+  due_today: boolean;
+}
+
+export interface ReviewStats {
+  total_in_vocab: number;
+  total_reviewed: number;
+  due_today: number;
+  new_words: number;
+}

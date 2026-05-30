@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Trash2, Star, Plus, FileDown, FileUp, NotebookPen, ChevronDown, Check } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { useAppStore } from "@/store";
 import {
   listVocabulary, countVocabulary, listTags,
@@ -186,7 +186,13 @@ export function VocabularyPage() {
   };
 
   const handleExport = async () => {
-    await exportVocabulary(selectedTagId ?? undefined);
+    const today = new Date().toISOString().slice(0, 10);
+    const path = await saveDialog({
+      defaultPath: `glean-${today}.md`,
+      filters: [{ name: "Markdown", extensions: ["md"] }],
+    });
+    if (!path) return;
+    await exportVocabulary(selectedTagId, path);
   };
 
   const handleImportClick = async () => {

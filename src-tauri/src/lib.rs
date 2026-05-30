@@ -8,6 +8,7 @@ use tauri::Emitter;
 use commands::dict_commands::*;
 use commands::vocab_commands::*;
 use commands::stats_commands::*;
+use commands::review_commands::*;
 use export::export_vocabulary;
 use tts::{play_pronunciation, play_mdd_audio};
 
@@ -118,6 +119,10 @@ pub fn run() {
             import_vocabulary_from_file,
             // Export
             export_vocabulary,
+            // Review
+            get_review_session,
+            submit_review,
+            get_review_stats,
             // Debug
             get_dict_icons,
             debug_mdx_header,

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import appIcon from "@/assets/app-icon.png";
-import { Book, BarChart3, Settings, Search, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Book, BarChart3, Settings, Search, Loader2, ChevronLeft, ChevronRight, GraduationCap } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
 import { useAppStore } from "@/store";
 import { searchCandidates, getRecentHistory, areDictsReady, getDictIcons } from "@/lib/commands";
@@ -176,6 +176,7 @@ export function Navbar() {
 
   const navItems: { page: Page; icon: React.ReactNode; label: string }[] = [
     { page: "vocabulary", icon: <Book size={16} />, label: "生词本" },
+    { page: "review", icon: <GraduationCap size={16} />, label: "背单词" },
     { page: "stats", icon: <BarChart3 size={16} />, label: "统计" },
     { page: "settings", icon: <Settings size={16} />, label: "设置" },
   ];

@@ -11,7 +11,7 @@
 | 产品名称 | 拾词 / Glean |
 | 目标平台 | macOS（优先），Windows（后续） |
 | 核心用户 | 碎片化记录词汇的外语学习者 |
-| 技术栈 | Tauri 2.x + Rust + React 18 + TypeScript |
+| 技术栈 | Tauri 2.x + Rust + React 19 + TypeScript 6 + Vite 8 |
 | 数据存储 | SQLite（本地）|
 | 数据目录 | `~/.glean/` |
 
@@ -294,7 +294,7 @@ CREATE TABLE dictionaries (
 - [x] 生词本列表页（排序/筛选）
 - [x] 标签 CRUD 与词汇-标签关联
 - [x] 用户备注编辑
-- [ ] 批量操作（删除、打标签）
+- [ ] 批量操作（删除、打标签）（暂缓，用户习惯逐词标记）
 
 ### Phase 3 — 发音与资源渲染 ✅
 
@@ -337,11 +337,13 @@ CREATE TABLE dictionaries (
 - [x] 字体体系重构：霞鹜文楷（Slogan）+ Cormorant Garamond（英文展示）+ 思源宋体（中文标题）
 - [x] 关于页重设计：图标融合背景（mix-blend-mode）、双语名称、Slogan 横线排版
 - [x] Logo 无边框化：全局 mix-blend-mode: multiply，图标直接融入暖纸背景
+- [x] 依赖全面升级：React 19、TypeScript 6、Vite 8、Tailwind CSS 4、ESLint 10
+- [x] Markdown 导出重构：平铺格式 `word  #tag1 #tag2`，原生 Save 对话框选路径/文件名
 - [ ] 设置页完善（发音偏好、主题等）
 
-### Phase 5 — 进阶功能（后续迭代）
+### Phase 5 — 背单词与进阶功能（进行中）
 
-- [ ] 卡片复习模式（正面单词 / 背面释义翻转）
+- [x] 卡片复习模式：SM-2 间隔重复算法，每次最多 20 词，四档评分（完全不记得/模糊/认识/很熟），翻牌显示词典原文
 - [ ] Anki 导出（生成 `.apkg`）
 - [ ] 全文检索（在词典定义内搜索）
 - [ ] 快捷键（全局唤起、翻页、收藏）
