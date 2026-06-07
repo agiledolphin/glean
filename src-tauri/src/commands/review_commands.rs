@@ -38,13 +38,13 @@ fn sm2_update(interval: i64, ease: f64, reps: i64, score: i64) -> (i64, f64, i64
 pub async fn get_review_session() -> Result<Vec<ReviewCard>, String> {
     let db = DB.get().unwrap().lock().unwrap();
 
-    // Due cards (overdue or due today)
+    // Due cards (overdue or due today) — random sample for broad coverage
     let mut due: Vec<String> = {
         let mut stmt = db
             .prepare(
                 "SELECT word FROM review_cards
                  WHERE due_date <= date('now')
-                 ORDER BY due_date ASC
+                 ORDER BY RANDOM()
                  LIMIT 20",
             )
             .map_err(|e| e.to_string())?;
@@ -64,7 +64,7 @@ pub async fn get_review_session() -> Result<Vec<ReviewCard>, String> {
                 "SELECT v.word FROM vocabulary v
                  LEFT JOIN review_cards rc ON rc.word = v.word
                  WHERE rc.word IS NULL
-                 ORDER BY v.created_at DESC
+                 ORDER BY RANDOM()
                  LIMIT ?1",
             )
             .map_err(|e| e.to_string())?;
