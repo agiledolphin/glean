@@ -1,6 +1,6 @@
 [package]
 name = "glean"
-version = "0.4.0"
+version = "0.5.0"
 description = "拾词 / Glean - A beautiful MDict dictionary app"
 authors = ["Glean"]
 edition = "2021"
