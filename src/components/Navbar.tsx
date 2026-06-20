@@ -135,6 +135,17 @@ export function Navbar() {
     return () => document.removeEventListener("keydown", handler);
   }, [setCurrentPage]);
 
+  // Cmd+[ / Cmd+] for history back/forward
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.metaKey) return;
+      if (e.key === "[") { e.preventDefault(); handleNavBack(); }
+      else if (e.key === "]") { e.preventDefault(); handleNavForward(); }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [handleNavBack, handleNavForward]);
+
   const handleHeaderMouseDown = useCallback((e: React.MouseEvent<HTMLElement>) => {
     const target = e.target as HTMLElement;
     if (target.closest("button, input, a, select, textarea")) return;
@@ -242,6 +253,10 @@ export function Navbar() {
             onKeyDown={handleKeyDown}
             placeholder={dictsReady ? "输入单词查询..." : "词库加载中..."}
             disabled={!dictsReady}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             className={cn(
               "pl-8 h-8 text-sm bg-muted/50 border-transparent focus-visible:bg-background focus-visible:border-border",
               "transition-all duration-150"
