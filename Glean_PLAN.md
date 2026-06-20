@@ -9,11 +9,12 @@
 | 项目 | 内容 |
 |------|------|
 | 产品名称 | 拾词 / Glean |
-| 目标平台 | macOS（优先），Windows（后续） |
+| 目标平台 | macOS ✅、iOS（开发中）、Windows（后续） |
 | 核心用户 | 碎片化记录词汇的外语学习者 |
-| 技术栈 | Tauri 2.x + Rust + React 19 + TypeScript 6 + Vite 8 |
-| 数据存储 | SQLite（本地）|
-| 数据目录 | `~/.glean/` |
+| macOS 技术栈 | Tauri 2.x + Rust + React 19 + TypeScript 6 + Vite 8 |
+| iOS 技术栈 | SwiftUI + GRDB.swift 6.x + MdxKit（Swift Package） |
+| 数据存储 | SQLite（本地，两端 schema 一致）|
+| 数据目录 | `~/.glean/`（macOS）/ `Documents/dicts/`（iOS） |
 
 ---
 
@@ -47,34 +48,53 @@
 
 ### 2.2 目录结构
 
+数据目录：
 ```
-~/.glean/
-├── glean.db            # 主数据库（生词本、查询历史、配置）
-├── config.toml         # 用户配置
-└── dicts/              # 词典文件目录（每个词典独立子目录）
-    └── <id>/           # id = SHA256(词典名)[:8]
-        ├── *.mdx       # MDict 词典数据文件
-        ├── *.mdd       # MDict 资源文件（音频/图片）
-        └── *.css       # 词典自带样式表（可选）
+~/.glean/                        # macOS 数据目录
+├── glean.db
+└── dicts/
+    └── <id>/                    # id = SHA256(词典名)[:8]
+        ├── *.mdx
+        ├── *.mdd
+        └── *.css
 
-项目源码结构：
-glean/
-├── src-tauri/          # Rust 后端
-│   ├── src/
-│   │   ├── main.rs
-│   │   ├── commands/   # Tauri commands（词典查询、生词管理等）
-│   │   ├── dict/       # MDict 解析引擎
-│   │   ├── db/         # SQLite 数据访问层
-│   │   ├── tts/        # 发音模块
-│   │   └── export/     # 导出模块
-│   └── Cargo.toml
-├── src/                # React 前端
-│   ├── components/     # UI 组件
-│   ├── pages/          # 页面视图
-│   ├── hooks/          # 自定义 hooks
-│   ├── store/          # 全局状态（Zustand）
-│   └── styles/         # 全局样式
-└── package.json
+Documents/dicts/                 # iOS 设备数据目录（Simulator 直接读 ~/.glean/dicts/）
+```
+
+源码结构（单一 git repo）：
+```
+glean/                           # monorepo 根目录
+├── CLAUDE.md
+├── README.md
+├── Glean_PLAN.md
+├── macos/                       # macOS Tauri 应用
+│   ├── src-tauri/               # Rust 后端
+│   │   └── src/
+│   │       ├── commands/        # Tauri commands
+│   │       ├── dict/            # MDX + MDD 解析引擎
+│   │       ├── db/              # SQLite 数据访问层
+│   │       ├── tts/             # 发音模块
+│   │       └── export/          # 导出模块
+│   ├── src/                     # React 前端
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── store/               # Zustand 全局状态
+│   │   └── styles/
+│   └── package.json
+└── ios/                         # iOS SwiftUI 应用
+    ├── MdxKit/                  # Swift Package：MDX + MDD 解析器
+    │   └── Sources/MdxKit/
+    │       ├── MdxDict.swift    # MDX 2.0 解析器（含 CSS 提取）
+    │       ├── MddDict.swift    # MDD 二进制资源解析器
+    │       ├── RIPEMD128.swift  # 自实现 RIPEMD-128
+    │       └── Zlib.swift       # zlib 封装
+    ├── GleanIOS/
+    │   ├── App/                 # 入口 + ContentView
+    │   ├── Database/            # GRDB schema
+    │   ├── Dict/                # DictManager（加载 + 查词）
+    │   ├── Models/              # Vocabulary、ReviewCard、QueryHistory
+    │   └── Views/               # SearchView、DictDetailView、VocabularyView…
+    └── project.yml              # xcodegen 配置
 ```
 
 ---
@@ -353,9 +373,56 @@ CREATE TABLE dictionaries (
 - [ ] 多设备同步（iCloud / WebDAV）
 - [ ] Windows 版本
 
+### iOS Phase 0 — 项目骨架 ✅
+
+- [x] xcodegen 配置，GRDB 6.x 依赖
+- [x] Database schema（与 macOS 版对齐：vocabulary、tags、review_cards、query_history）
+- [x] GRDB Models（VocabularyWord、Tag、ReviewCard、QueryHistory）
+- [x] TabView 三栏（查词 / 生词本 / 背单词）
+- [x] iPhone 17 Pro 模拟器编译运行通过
+
+### iOS Phase 1 — MDX + MDD 解析器 ✅
+
+- [x] Swift Package `MdxKit` 建立
+- [x] RIPEMD-128 自实现（4 标准测试向量全通过）
+- [x] zlib 解压（C zlib 封装）
+- [x] MDX 2.0 全解析：header、key blocks（加密/非加密）、record blocks
+- [x] MDD 二进制资源解析器（`MddDict`）：key index + binary record 读取
+- [x] CSS 自动提取：优先目录 `.css` 文件，无则从 `.mdd` 提取（参照 Rust 实现）
+- [x] `@@@LINK=` 重定向跟随（最深 5 层）
+- [x] 数字别名过滤（`dream_1` 等不出现在候选列表）
+- [x] 集成测试（牛津、柯林斯、朗文实体词典验证）
+
+### iOS Phase 2 — 查词页 ✅
+
+- [x] DictManager：从 `~/.glean/dicts/`（Simulator）/ `Documents/dicts/`（设备）加载词典
+- [x] SearchView：120ms debounce 前缀搜索，候选列表，NavigationLink
+- [x] DictDetailView：多词典 tab 顶部切换 + `‹ ›` 工具栏按钮（WKWebView 拦截手势）
+- [x] DictPageVC：UIViewController + WKWebView，per-dict 独立滚动
+- [x] CSS 注入（baseCSS + dict.css，`li:empty { display: none }` 修复柯林斯空频率条）
+- [x] baseURL 设为词典目录，支持相对路径资源加载
+
+### iOS Phase 3 — 生词本与发音（待开发）
+
+- [ ] VocabularyView 完善（标签筛选、列表、详情）
+- [ ] 词典内 `sound://` 链接拦截 → AVFoundation 播放 MDD 音频
+- [ ] 查询历史写入 GRDB
+- [ ] 收藏按钮（加入生词本）
+- [ ] 词典文件导入（Files App，`UIDocumentPickerViewController`）
+
+### iOS Phase 4 — 背单词与完善（待开发）
+
+- [ ] SM-2 复习会话（与 macOS 版逻辑对齐）
+- [ ] iCloud 同步（生词本 + 复习记录）
+- [ ] 深色模式适配
+- [ ] App 图标 / 启动页
+- [ ] 字体体系（匹配 macOS 版 Flexoki 风格）
+
 ---
 
 ## 七、关键技术依赖
+
+### macOS
 
 | 模块 | 方案 | Crate / 库 |
 |------|------|-----------|
@@ -368,6 +435,19 @@ CREATE TABLE dictionaries (
 | 富文本渲染 | 词典 HTML + CSS，Shadow DOM 隔离，URL 重写 | 原生 Web API |
 | 图表 | 统计页 | `recharts` |
 | 发音 | MDD 音频优先，系统 TTS 降级 | Tauri shell（`afplay` / `say`）|
+
+### iOS
+
+| 模块 | 方案 | 库 |
+|------|------|---|
+| MDict 解析 | MdxKit Swift Package（自实现） | 纯 Swift + C zlib |
+| MDD 资源解析 | MdxKit MddDict（同 MDX block 结构，binary value） | 纯 Swift |
+| RIPEMD-128 | 完整自实现，4 测试向量验证 | 纯 Swift |
+| 词条前缀索引 | 内存 Dictionary + 排序数组（前缀二分查找） | Swift 标准库 |
+| 数据库 | SQLite（schema 与 macOS 版对齐） | GRDB.swift 6.x |
+| UI | SwiftUI（iOS 17+）+ `@Observable` | Apple 框架 |
+| 富文本渲染 | WKWebView（per-dict UIViewController），CSS 内联注入 | WebKit |
+| 发音 | 待实现：AVFoundation 播放 MDD 音频 | AVFoundation |
 
 ---
 

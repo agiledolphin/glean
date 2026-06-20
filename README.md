@@ -3,7 +3,12 @@
 > 每一个词，都值得被拾起。  
 > *Glean the beauty of every word.*
 
-**拾词（Glean）** 是一款面向外语学习者的 macOS 桌面词典应用，支持导入 MDict（`.mdx` / `.mdd`）格式词典，提供流畅的查询体验与生词管理功能。
+**拾词（Glean）** 是一款面向外语学习者的 MDict 词典应用，支持导入 MDict（`.mdx` / `.mdd`）格式词典，提供流畅的查询体验与生词管理功能。
+
+| 平台 | 状态 | 技术栈 |
+|------|------|--------|
+| macOS | ✅ v0.4.0 | Tauri 2.x + Rust + React 19 |
+| iOS | 🚧 开发中 | SwiftUI + MdxKit (Swift) |
 
 ---
 
@@ -50,27 +55,18 @@
 
 ## 本地开发
 
-### 依赖
+### macOS 应用（`macos/`）
 
-- [Node.js](https://nodejs.org/) 18+
-- [Rust](https://www.rust-lang.org/) 1.77+
-- [Tauri CLI](https://tauri.app/) 2.x
-
-### 启动开发环境
+**依赖：** Node.js 18+、Rust 1.77+、Tauri CLI 2.x
 
 ```bash
+cd macos
+
 # 安装前端依赖
 npm install
 
 # 启动开发模式（Vite + Rust 后端同时启动）
 npm run tauri dev
-```
-
-### 其他命令
-
-```bash
-# 仅前端开发
-npm run dev
 
 # TypeScript 类型检查
 npx tsc --noEmit
@@ -82,18 +78,42 @@ cargo build --manifest-path src-tauri/Cargo.toml
 npm run tauri build
 ```
 
+### iOS 应用（`ios/`）
+
+**依赖：** Xcode 15+、iOS 17 Simulator
+
+```bash
+# 在 Xcode 中打开
+open ios/GleanIOS.xcodeproj
+
+# 运行 MdxKit 单元测试
+cd ios/MdxKit && swift test
+
+# 重新生成 Xcode 项目（修改 project.yml 后）
+cd ios && xcodegen generate
+```
+
 ---
 
 ## 技术栈
 
+### macOS
 | 层级 | 技术 |
 |------|------|
 | 前端 | React 19 + TypeScript 6 + Vite 8 + Tailwind CSS 4 + shadcn/ui |
 | 后端 | Rust + Tauri 2.x |
 | 数据库 | SQLite（rusqlite，本地存储） |
 | 状态管理 | Zustand |
-| MDX 解析 | 自实现（支持 MDX 2.0、zlib、RIPEMD-128） |
+| MDX/MDD 解析 | 自实现 Rust 解析器（MDX 2.0、zlib、RIPEMD-128、MDD 二进制） |
 | 图表 | Recharts |
+
+### iOS
+| 层级 | 技术 |
+|------|------|
+| UI | SwiftUI（iOS 17+）+ `@Observable` |
+| 数据库 | GRDB.swift 6.x（schema 与 macOS 版一致） |
+| MDX/MDD 解析 | MdxKit Swift Package（自实现，RIPEMD-128 + zlib + MDD） |
+| 渲染 | WKWebView + CSS 内联注入，per-dict 独立滚动 |
 
 ---
 
