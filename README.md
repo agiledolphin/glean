@@ -7,8 +7,8 @@
 
 | 平台 | 状态 | 技术栈 |
 |------|------|--------|
-| macOS | ✅ v0.4.0 | Tauri 2.x + Rust + React 19 |
-| iOS | 🚧 开发中 | SwiftUI + MdxKit (Swift) |
+| macOS | ✅ v0.5.0 | Tauri 2.x + Rust + React 19 |
+| iOS | ✅ v0.5.0（查词可用） | SwiftUI + MdxKit (Swift) |
 
 ---
 
@@ -134,6 +134,12 @@ cd ios && xcodegen generate
 ---
 
 ## 版本历史
+
+### v0.5.0
+- **iOS 原生应用**：首个可用版本，支持 MDX+MDD 词典解析、实时前缀搜索、多词典并排查阅（WKWebView + CSS 注入）
+- **iOS MdxKit**：Swift Package 完整实现 MDX 2.0 + MDD 二进制资源解析，包含 RIPEMD-128 自实现与 zlib 解压
+- **iOS 词典排序**：读取 macOS `glean.db` 的 `sort_order`，与 macOS 端保持一致
+- **monorepo 重构**：macOS 应用移至 `macos/`，iOS 应用移至 `ios/`，单一 git 仓库管理
 
 ### v0.4.0
 - **背单词**：SM-2 间隔重复算法，每次最多 20 词（优先到期词，不足时以最新生词补充），四档评分，翻牌显示完整词典原文

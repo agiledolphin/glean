@@ -11,6 +11,7 @@
 | 产品名称 | 拾词 / Glean |
 | 目标平台 | macOS ✅、iOS（开发中）、Windows（后续） |
 | 核心用户 | 碎片化记录词汇的外语学习者 |
+| 当前版本 | v0.5.0 |
 | macOS 技术栈 | Tauri 2.x + Rust + React 19 + TypeScript 6 + Vite 8 |
 | iOS 技术栈 | SwiftUI + GRDB.swift 6.x + MdxKit（Swift Package） |
 | 数据存储 | SQLite（本地，两端 schema 一致）|
@@ -396,8 +397,10 @@ CREATE TABLE dictionaries (
 ### iOS Phase 2 — 查词页 ✅
 
 - [x] DictManager：从 `~/.glean/dicts/`（Simulator）/ `Documents/dicts/`（设备）加载词典
+- [x] DictManager：读取 `~/.glean/glean.db` 的 `sort_order`（SQLite3），词典顺序与 macOS 端对齐
 - [x] SearchView：120ms debounce 前缀搜索，候选列表，NavigationLink
-- [x] DictDetailView：多词典 tab 顶部切换 + `‹ ›` 工具栏按钮（WKWebView 拦截手势）
+- [x] SearchView：`.textInputAutocapitalization(.never)` 禁用搜索框首字母自动大写
+- [x] DictDetailView：多词典 tab 顶部切换，左右滑动翻页（TabView）
 - [x] DictPageVC：UIViewController + WKWebView，per-dict 独立滚动
 - [x] CSS 注入（baseCSS + dict.css，`li:empty { display: none }` 修复柯林斯空频率条）
 - [x] baseURL 设为词典目录，支持相对路径资源加载
