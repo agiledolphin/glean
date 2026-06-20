@@ -1,14 +1,20 @@
 # macOS Tauri app
 macos/node_modules/
 macos/dist/
-macos/target/
+macos/src-tauri/target/
 macos/src-tauri/gen/
 macos/.vite/
 macos/dict/
+macos/src-tauri/src/dict/
+
+# Repo root leftovers from pre-monorepo
+/dict/
+/dist/
 
 # iOS app
 ios/MdxKit/.build/
 ios/GleanIOS.xcodeproj/xcuserdata/
+ios/GleanIOS.xcodeproj/project.xcworkspace/xcuserdata/
 
 # Misc
 .DS_Store
