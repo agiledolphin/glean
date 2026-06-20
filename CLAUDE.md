@@ -4,27 +4,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+### macOS app (`macos/`)
+
 ```bash
 # Full dev (starts Vite + Rust backend together)
-npm run tauri dev
+cd macos && npm run tauri dev
 
 # Frontend only
-npm run dev
+cd macos && npm run dev
 
 # Type-check frontend (no emit)
-npx tsc --noEmit
+cd macos && npx tsc --noEmit
 
 # Lint frontend
-npm run lint
+cd macos && npm run lint
 
 # Build Rust backend only (fast iteration)
-cargo build --manifest-path src-tauri/Cargo.toml
+cargo build --manifest-path macos/src-tauri/Cargo.toml
 
 # Release build
-npm run tauri build
+cd macos && npm run tauri build
 ```
 
 Rust compile errors surface in the terminal running `npm run tauri dev`. There are no automated tests.
+
+### iOS app (`ios/`)
+
+```bash
+# Run MdxKit unit tests
+cd ios/MdxKit && swift test
+
+# Regenerate Xcode project from project.yml
+cd ios && xcodegen generate
+
+# Open in Xcode
+open ios/GleanIOS.xcodeproj
+```
 
 ## Python
 
@@ -52,7 +67,7 @@ User selects word → invoke("lookup_word") → MdxDict::lookup (file seek)
                                           → DictResultPanel (Shadow DOM render)
 ```
 
-### Rust backend (`src-tauri/src/`)
+### Rust backend (`macos/src-tauri/src/`)
 
 - **`lib.rs`** — entry point: initialises DB, dict registry, preloads enabled dicts, registers all Tauri commands.
 - **`db/mod.rs`** — single `OnceCell<Mutex<Connection>>` for SQLite. Schema is created on first run. `record_query()` upserts into both `query_history` and `word_stats`.
@@ -61,7 +76,7 @@ User selects word → invoke("lookup_word") → MdxDict::lookup (file seek)
 - **`dict/index.rs`** — `DictIndex::prefix_search` acquires the registry read lock and the DB lock (in that order) to query enabled dicts.
 - **`commands/dict_commands.rs`** — import takes a **directory path**, finds the `.mdx` inside, copies the whole directory to `~/.glean/dicts/<id>/` (id = SHA256(stem)[:8]). Delete removes the directory. `lookup_word` returns `css: Option<String>` alongside each result.
 
-### Frontend (`src/`)
+### Frontend (`macos/src/`)
 
 - **`store/index.ts`** — single Zustand store for all shared state: search query, candidates, selected word, dict results, dictionaries, vocabulary, tags.
 - **`lib/commands.ts`** — thin wrappers around `invoke<T>(command, args)`. All backend calls go through here.
