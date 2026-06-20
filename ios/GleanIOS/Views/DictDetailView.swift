@@ -24,25 +24,6 @@ struct DictDetailView: View {
         }
         .navigationTitle(word)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if results.count > 1 {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button {
-                        withAnimation { currentPage = max(currentPage - 1, 0) }
-                    } label: {
-                        Image(systemName: "chevron.left")
-                    }
-                    .disabled(currentPage == 0)
-
-                    Button {
-                        withAnimation { currentPage = min(currentPage + 1, results.count - 1) }
-                    } label: {
-                        Image(systemName: "chevron.right")
-                    }
-                    .disabled(currentPage == results.count - 1)
-                }
-            }
-        }
         .task { await load() }
     }
 

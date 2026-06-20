@@ -30,6 +30,8 @@ struct SearchView: View {
             }
             .navigationTitle("拾词")
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "输入单词...")
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
             .onChange(of: query) { _, newValue in scheduleSearch(newValue) }
             .navigationDestination(item: $selectedWord) { word in
                 DictDetailView(word: word)

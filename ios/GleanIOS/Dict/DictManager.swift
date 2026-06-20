@@ -1,6 +1,7 @@
 import MdxKit
 import Observation
 import Foundation
+import SQLite3
 
 @Observable
 final class DictManager: @unchecked Sendable {
@@ -33,7 +34,7 @@ final class DictManager: @unchecked Sendable {
             }
         }
 
-        dicts = loaded
+        dicts = Self.sorted(loaded, using: Self.gleanDbPath)
         isReady = true
     }
 
@@ -92,5 +93,50 @@ final class DictManager: @unchecked Sendable {
     private func findMdx(in dir: URL) -> URL? {
         (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil))?
             .first { $0.pathExtension.lowercased() == "mdx" }
+    }
+
+    // MARK: - Sort by macOS glean.db sort_order
+
+    // Read sort_order from ~/.glean/glean.db (keyed by dict directory ID).
+    // Falls back to title alphabetical order if the DB is unavailable.
+    private static func sorted(_ dicts: [MdxDict], using dbPath: String?) -> [MdxDict] {
+        guard let dbPath, let order = readSortOrder(from: dbPath), !order.isEmpty else {
+            return dicts.sorted { $0.meta.title < $1.meta.title }
+        }
+        return dicts.sorted { a, b in
+            let idA = URL(fileURLWithPath: a.filePath).deletingLastPathComponent().lastPathComponent
+            let idB = URL(fileURLWithPath: b.filePath).deletingLastPathComponent().lastPathComponent
+            let sa = order[idA] ?? Int.max
+            let sb = order[idB] ?? Int.max
+            return sa < sb
+        }
+    }
+
+    private static func readSortOrder(from dbPath: String) -> [String: Int]? {
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(dbPath, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else { return nil }
+        defer { sqlite3_close(db) }
+
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "SELECT id, sort_order FROM dictionaries", -1, &stmt, nil) == SQLITE_OK else { return nil }
+        defer { sqlite3_finalize(stmt) }
+
+        var result: [String: Int] = [:]
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if let idPtr = sqlite3_column_text(stmt, 0) {
+                result[String(cString: idPtr)] = Int(sqlite3_column_int(stmt, 1))
+            }
+        }
+        return result
+    }
+
+    private static var gleanDbPath: String? {
+        #if targetEnvironment(simulator)
+        let container = NSHomeDirectory()
+        if let range = container.range(of: "/Library/Developer/CoreSimulator/") {
+            return String(container[..<range.lowerBound]) + "/.glean/glean.db"
+        }
+        #endif
+        return nil  // device: no macOS DB, fall back to title sort
     }
 }
