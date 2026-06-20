@@ -1,23 +1,19 @@
-# Dependencies
-node_modules/
+# macOS Tauri app
+macos/node_modules/
+macos/dist/
+macos/target/
+macos/src-tauri/gen/
+macos/.vite/
+macos/dict/
 
-# Build outputs
-dist/
-target/
-src-tauri/gen/
-
-# Vite cache
-.vite/
-
-# Logs
-*.log
-npm-debug.log*
-
-# Local dictionary files
-dict/
+# iOS app
+ios/MdxKit/.build/
+ios/GleanIOS.xcodeproj/xcuserdata/
 
 # Misc
 .DS_Store
+*.log
+npm-debug.log*
 *.pem
 .env
 .env.local
