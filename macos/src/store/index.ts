@@ -30,6 +30,12 @@ interface AppState {
   dictIcons: Record<string, string>;
   setDictIcons: (icons: Record<string, string>) => void;
 
+  // Settings
+  onlineLookupEnabled: boolean;
+  setOnlineLookupEnabled: (v: boolean) => void;
+  aiEnabled: boolean;
+  setAiEnabled: (v: boolean) => void;
+
   // Vocabulary
   vocabulary: VocabularyItem[];
   setVocabulary: (items: VocabularyItem[]) => void;
@@ -66,6 +72,11 @@ export const useAppStore = create<AppState>((set) => ({
   setDictionaries: (dicts) => set({ dictionaries: dicts }),
   dictIcons: {},
   setDictIcons: (icons) => set({ dictIcons: icons }),
+
+  onlineLookupEnabled: false,
+  setOnlineLookupEnabled: (v) => set({ onlineLookupEnabled: v }),
+  aiEnabled: false,
+  setAiEnabled: (v) => set({ aiEnabled: v }),
 
   vocabulary: [],
   setVocabulary: (items) => set({ vocabulary: items }),

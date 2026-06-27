@@ -1,6 +1,6 @@
 [package]
 name = "glean"
-version = "0.5.0"
+version = "0.6.0"
 description = "拾词 / Glean - A beautiful MDict dictionary app"
 authors = ["Glean"]
 edition = "2021"
@@ -39,6 +39,8 @@ nom = "7"
 log = "0.4"
 pretty_env_logger = "0.5"
 dirs = "5"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+urlencoding = "2"
 bincode = "1"
 base64 = "0.22"
 

@@ -7,7 +7,7 @@
 
 | 平台 | 状态 | 技术栈 |
 |------|------|--------|
-| macOS | ✅ v0.5.0 | Tauri 2.x + Rust + React 19 |
+| macOS | ✅ v0.6.0 | Tauri 2.x + Rust + React 19 |
 | iOS | ✅ v0.5.0（查词可用） | SwiftUI + MdxKit (Swift) |
 
 ---
@@ -134,6 +134,11 @@ cd ios && xcodegen generate
 ---
 
 ## 版本历史
+
+### v0.6.0
+- **在线查词 fallback** — 本地词典无结果时自动调用 Free Dictionary API（可在设置中开关）
+- **AI 解释** — 词典结果面板新增「AI 解释」按钮，支持 DeepSeek / OpenAI / Ollama 等 OpenAI 兼容 API
+- 设置页新增「在线查词」与「AI 解释」配置区，API Key 持久化存储到本地 SQLite
 
 ### v0.5.0
 - **iOS 原生应用**：首个可用版本，支持 MDX+MDD 词典解析、实时前缀搜索、多词典并排查阅（WKWebView + CSS 注入）

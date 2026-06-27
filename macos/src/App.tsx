@@ -6,15 +6,17 @@ import { VocabularyPage } from "@/pages/VocabularyPage";
 import { StatsPage } from "@/pages/StatsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { ReviewPage } from "@/pages/ReviewPage";
-import { listDictionaries } from "@/lib/commands";
+import { listDictionaries, getSetting } from "@/lib/commands";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function App() {
-  const { currentPage, setDictionaries } = useAppStore();
+  const { currentPage, setDictionaries, setOnlineLookupEnabled, setAiEnabled } = useAppStore();
 
   useEffect(() => {
     listDictionaries().then(setDictionaries).catch(() => {});
-  }, [setDictionaries]);
+    getSetting("online_lookup_enabled").then(v => setOnlineLookupEnabled(v === "true")).catch(() => {});
+    getSetting("llm_enabled").then(v => setAiEnabled(v === "true")).catch(() => {});
+  }, [setDictionaries, setOnlineLookupEnabled, setAiEnabled]);
 
   // Tab cycles only between the 3 focus zones
   useEffect(() => {

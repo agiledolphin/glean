@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Clock, Search } from "lucide-react";
 import { useAppStore } from "@/store";
-import { lookupWord } from "@/lib/commands";
+import { lookupWord, lookupOnline } from "@/lib/commands";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +43,7 @@ export function CandidateList() {
     highlightedIndex, setHighlightedIndex,
     selectedWord, setSelectedWord,
     dictResults, setDictResults, setIsSearching,
-    dictIcons,
+    dictIcons, onlineLookupEnabled,
   } = useAppStore();
 
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -83,7 +83,14 @@ export function CandidateList() {
     setIsSearching(true);
     try {
       const results = await lookupWord(word);
-      setDictResults(results);
+      if (results.length > 0) {
+        setDictResults(results);
+      } else if (onlineLookupEnabled) {
+        const online = await lookupOnline(word);
+        setDictResults(online ? [online] : []);
+      } else {
+        setDictResults([]);
+      }
     } catch {
       setDictResults([]);
     } finally {

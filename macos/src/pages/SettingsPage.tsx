@@ -6,6 +6,7 @@ import { useAppStore } from "@/store";
 import {
   listDictionaries, importDictionary,
   toggleDictionary, removeDictionary, updateDictionaryOrder,
+  setSetting, getSetting,
 } from "@/lib/commands";
 import { open } from "@tauri-apps/plugin-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,7 +25,50 @@ interface GhostState {
 }
 
 export function SettingsPage() {
-  const { dictionaries, setDictionaries } = useAppStore();
+  const { dictionaries, setDictionaries, onlineLookupEnabled, setOnlineLookupEnabled, aiEnabled, setAiEnabled } = useAppStore();
+
+  const handleOnlineToggle = async (enabled: boolean) => {
+    setOnlineLookupEnabled(enabled);
+    await setSetting("online_lookup_enabled", String(enabled));
+  };
+
+  // LLM settings
+  const [llmBaseUrl, setLlmBaseUrl] = useState("");
+  const [llmApiKey, setLlmApiKey] = useState("");
+  const [llmModel, setLlmModel] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
+
+  const PRESETS = [
+    { label: "DeepSeek", url: "https://api.deepseek.com", model: "deepseek-v4-flash" },
+    { label: "OpenAI", url: "https://api.openai.com/v1", model: "gpt-4o-mini" },
+    { label: "Ollama", url: "http://localhost:11434/v1", model: "llama3" },
+  ];
+
+  useEffect(() => {
+    Promise.all([
+      getSetting("llm_base_url"),
+      getSetting("llm_api_key"),
+      getSetting("llm_model"),
+    ]).then(([url, key, model]) => {
+      setLlmBaseUrl(url ?? "https://api.deepseek.com");
+      setLlmApiKey(key ?? "");
+      setLlmModel(model ?? "deepseek-v4-flash");
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleLlmSave = async () => {
+    await Promise.all([
+      setSetting("llm_base_url", llmBaseUrl.trim()),
+      setSetting("llm_api_key", llmApiKey.trim()),
+      setSetting("llm_model", llmModel.trim()),
+    ]);
+  };
+
+  const handleAiToggle = async (enabled: boolean) => {
+    setAiEnabled(enabled);
+    await setSetting("llm_enabled", String(enabled));
+  };
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [appVersion, setAppVersion] = useState("");
@@ -232,6 +276,127 @@ export function SettingsPage() {
               ))}
             </ul>
           )}
+        </section>
+
+        <Separator />
+
+        <section>
+          <h2 className="text-base font-medium mb-1">在线查词</h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            本地词典无结果时，自动通过 Free Dictionary API 在线查询（仅支持英语）
+          </p>
+          <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <div>
+              <p className="text-sm font-medium">Free Dictionary API</p>
+              <p className="text-xs text-muted-foreground mt-0.5">dictionaryapi.dev · 免费 · 无需 API Key</p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={onlineLookupEnabled}
+              onClick={() => handleOnlineToggle(!onlineLookupEnabled)}
+              className={cn(
+                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
+                onlineLookupEnabled ? "bg-primary" : "bg-input"
+              )}
+            >
+              <span className={cn(
+                "pointer-events-none inline-block h-4 w-4 rounded-full bg-background shadow-lg transition-transform",
+                onlineLookupEnabled ? "translate-x-4" : "translate-x-0"
+              )} />
+            </button>
+          </div>
+        </section>
+
+        <Separator />
+
+        <section>
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h2 className="text-base font-medium">AI 解释</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">在词典结果面板中显示 AI 解释按钮</p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={aiEnabled}
+              onClick={() => handleAiToggle(!aiEnabled)}
+              className={cn(
+                "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
+                aiEnabled ? "bg-primary" : "bg-input"
+              )}
+            >
+              <span className={cn(
+                "pointer-events-none inline-block h-4 w-4 rounded-full bg-background shadow-lg transition-transform",
+                aiEnabled ? "translate-x-4" : "translate-x-0"
+              )} />
+            </button>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {/* Presets */}
+            <div className="flex gap-2">
+              {PRESETS.map(p => (
+                <button
+                  key={p.label}
+                  onClick={() => { setLlmBaseUrl(p.url); setLlmModel(p.model); }}
+                  className={cn(
+                    "text-xs px-2.5 py-1 rounded-md border transition-colors",
+                    llmBaseUrl === p.url
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-foreground"
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Base URL */}
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Base URL</label>
+              <input
+                type="text"
+                value={llmBaseUrl}
+                onChange={e => setLlmBaseUrl(e.target.value)}
+                onBlur={handleLlmSave}
+                placeholder="https://api.deepseek.com/v1"
+                className="w-full text-sm px-3 py-1.5 rounded-md border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            {/* API Key */}
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">API Key</label>
+              <div className="relative">
+                <input
+                  type={showApiKey ? "text" : "password"}
+                  value={llmApiKey}
+                  onChange={e => setLlmApiKey(e.target.value)}
+                  onBlur={handleLlmSave}
+                  placeholder="sk-..."
+                  className="w-full text-sm px-3 py-1.5 pr-9 rounded-md border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <button
+                  onClick={() => setShowApiKey(v => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showApiKey ? <EyeOff size={13} /> : <Eye size={13} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Model */}
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Model</label>
+              <input
+                type="text"
+                value={llmModel}
+                onChange={e => setLlmModel(e.target.value)}
+                onBlur={handleLlmSave}
+                placeholder="deepseek-chat"
+                className="w-full text-sm px-3 py-1.5 rounded-md border border-border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          </div>
         </section>
 
         <Separator />

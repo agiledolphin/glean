@@ -11,7 +11,7 @@
 | 产品名称 | 拾词 / Glean |
 | 目标平台 | macOS ✅、iOS（开发中）、Windows（后续） |
 | 核心用户 | 碎片化记录词汇的外语学习者 |
-| 当前版本 | v0.5.0 |
+| 当前版本 | v0.6.0 |
 | macOS 技术栈 | Tauri 2.x + Rust + React 19 + TypeScript 6 + Vite 8 |
 | iOS 技术栈 | SwiftUI + GRDB.swift 6.x + MdxKit（Swift Package） |
 | 数据存储 | SQLite（本地，两端 schema 一致）|

@@ -27,6 +27,18 @@ export const searchCandidates = (prefix: string) =>
 export const lookupWord = (word: string) =>
   invoke<DictResult[]>("lookup_word", { word });
 
+export const lookupOnline = (word: string) =>
+  invoke<DictResult | null>("lookup_online", { word });
+
+export const askAi = (word: string) =>
+  invoke<string>("ask_ai", { word });
+
+export const getSetting = (key: string) =>
+  invoke<string | null>("get_setting", { key });
+
+export const setSetting = (key: string, value: string) =>
+  invoke<void>("set_setting", { key, value });
+
 export const getRecentHistory = (limit: number) =>
   invoke<string[]>("get_recent_history", { limit });
 

@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import appIcon from "@/assets/app-icon.png";
-import { BookmarkPlus, BookmarkCheck, Volume2, Loader2, ChevronDown, ChevronRight, Tag as TagIcon } from "lucide-react";
+import { BookmarkPlus, BookmarkCheck, Volume2, Loader2, ChevronDown, ChevronRight, Tag as TagIcon, Sparkles } from "lucide-react";
 import { useAppStore } from "@/store";
-import { addToVocabulary, removeFromVocabulary, isInVocabulary, getVocabularyTags, playPronunciation, playMddAudio, listTags, addTagToWord, removeTagFromWord } from "@/lib/commands";
+import { addToVocabulary, removeFromVocabulary, isInVocabulary, getVocabularyTags, playPronunciation, playMddAudio, listTags, addTagToWord, removeTagFromWord, askAi } from "@/lib/commands";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import type { Tag } from "@/types";
 
 export function DictResultPanel() {
-  const { selectedWord, dictResults, isSearching } = useAppStore();
+  const { selectedWord, dictResults, isSearching, aiEnabled } = useAppStore();
   const [inVocab, setInVocab] = useState(false);
   const [vocabLoading, setVocabLoading] = useState(false);
   const [playingAudio, setPlayingAudio] = useState(false);
@@ -18,15 +18,40 @@ export function DictResultPanel() {
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [activeTagIds, setActiveTagIds] = useState<Set<number>>(new Set());
   const [showTagPanel, setShowTagPanel] = useState(false);
+  const [aiHtml, setAiHtml] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiCollapsed, setAiCollapsed] = useState(false);
 
   // Load tags once on mount
   useEffect(() => {
     listTags().then(tags => setAllTags(tags)).catch(() => {});
   }, []);
 
-  // Reset collapsed state when the word changes
+  // Reset state when the word changes
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setCollapsed(new Set()); }, [selectedWord]);
+  useEffect(() => {
+    setCollapsed(new Set());
+    setAiHtml(null);
+    setAiError(null);
+    setAiCollapsed(false);
+  }, [selectedWord]);
+
+  const handleAsk = async () => {
+    if (!selectedWord) return;
+    setAiLoading(true);
+    setAiError(null);
+    setAiHtml(null);
+    setAiCollapsed(false);
+    try {
+      const html = await askAi(selectedWord);
+      setAiHtml(html);
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const toggleCollapse = (dictId: string) =>
     setCollapsed(prev => {
@@ -255,6 +280,50 @@ export function DictResultPanel() {
           </div>
         ) : (
           <div className="px-5 py-4 space-y-0">
+            {/* AI explanation section */}
+            {aiEnabled && (
+              <div className="mb-2">
+                <div className="flex items-center gap-2 py-2.5 w-full">
+                  {aiHtml ? (
+                    <button className="flex items-center gap-2 group" onClick={() => setAiCollapsed(v => !v)}>
+                      {aiCollapsed
+                        ? <ChevronRight size={12} className="text-muted-foreground shrink-0" />
+                        : <ChevronDown size={12} className="text-muted-foreground shrink-0" />}
+                    </button>
+                  ) : <span className="w-3" />}
+                  <Sparkles size={12} className="text-muted-foreground shrink-0" />
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider shrink-0">
+                    AI 解释
+                  </span>
+                  <Separator className="flex-1" />
+                  {!aiHtml && !aiLoading && (
+                    <button
+                      onClick={handleAsk}
+                      className="text-xs text-primary hover:text-primary/80 transition-colors shrink-0 ml-2"
+                    >
+                      生成
+                    </button>
+                  )}
+                  {aiLoading && <Loader2 size={12} className="animate-spin text-muted-foreground shrink-0 ml-2" />}
+                  {aiHtml && !aiLoading && (
+                    <button
+                      onClick={handleAsk}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-2"
+                    >
+                      重新生成
+                    </button>
+                  )}
+                </div>
+                {aiError && (
+                  <p className="text-xs text-destructive px-1 pb-2">{aiError}</p>
+                )}
+                {aiHtml && !aiCollapsed && (
+                  <DictContent html={aiHtml} dictId="ai" />
+                )}
+                <div className="h-4" />
+              </div>
+            )}
+
             {dictResults.map((result, idx) => {
               const isCollapsed = collapsed.has(result.dict_id);
               return (

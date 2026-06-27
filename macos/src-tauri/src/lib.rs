@@ -9,6 +9,7 @@ use commands::dict_commands::*;
 use commands::vocab_commands::*;
 use commands::stats_commands::*;
 use commands::review_commands::*;
+use commands::online_commands::{lookup_online, ask_ai, get_setting, set_setting};
 use export::export_vocabulary;
 use tts::{play_pronunciation, play_mdd_audio};
 
@@ -91,6 +92,10 @@ pub fn run() {
             search_candidates,
             lookup_word,
             get_recent_history,
+            lookup_online,
+            ask_ai,
+            get_setting,
+            set_setting,
             // Vocabulary
             count_vocabulary,
             add_to_vocabulary,

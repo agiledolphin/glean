@@ -104,6 +104,11 @@ fn migrate_schema(conn: &Connection) -> Result<()> {
             last_reviewed TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_review_due ON review_cards(due_date);
+
+        CREATE TABLE IF NOT EXISTS settings (
+            key   TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
     ")?;
 
     Ok(())
