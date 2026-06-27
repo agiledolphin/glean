@@ -7,7 +7,7 @@
 
 | 平台 | 状态 | 技术栈 |
 |------|------|--------|
-| macOS | ✅ v0.6.0 | Tauri 2.x + Rust + React 19 |
+| macOS | ✅ v0.6.1 | Tauri 2.x + Rust + React 19 |
 | iOS | ✅ v0.5.0（查词可用） | SwiftUI + MdxKit (Swift) |
 
 ---
@@ -134,6 +134,10 @@ cd ios && xcodegen generate
 ---
 
 ## 版本历史
+
+### v0.6.1
+- **AI 解释**：查不到本地词典时也显示 AI 解释入口
+- **AI 请求竞态修复**：切词或跳页时自动丢弃进行中的旧请求，防止结果写入错误的单词面板
 
 ### v0.6.0
 - **在线查词 fallback** — 本地词典无结果时自动调用 Free Dictionary API（可在设置中开关）

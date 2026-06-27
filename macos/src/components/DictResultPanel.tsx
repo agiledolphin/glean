@@ -22,34 +22,45 @@ export function DictResultPanel() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiCollapsed, setAiCollapsed] = useState(false);
+  const aiRequestWordRef = useRef<string | null>(null);
 
   // Load tags once on mount
   useEffect(() => {
     listTags().then(tags => setAllTags(tags)).catch(() => {});
   }, []);
 
-  // Reset state when the word changes
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+  // Invalidate in-flight AI request on unmount
   useEffect(() => {
+    return () => { aiRequestWordRef.current = null; };
+  }, []);
+
+  // Reset state when the word changes; also invalidates any in-flight AI request
+  useEffect(() => {
+    aiRequestWordRef.current = null;
     setCollapsed(new Set());
     setAiHtml(null);
     setAiError(null);
+    setAiLoading(false);
     setAiCollapsed(false);
   }, [selectedWord]);
 
   const handleAsk = async () => {
     if (!selectedWord) return;
+    const thisWord = selectedWord;
+    aiRequestWordRef.current = thisWord;
     setAiLoading(true);
     setAiError(null);
     setAiHtml(null);
     setAiCollapsed(false);
     try {
-      const html = await askAi(selectedWord);
+      const html = await askAi(thisWord);
+      if (aiRequestWordRef.current !== thisWord) return;
       setAiHtml(html);
     } catch (e) {
+      if (aiRequestWordRef.current !== thisWord) return;
       setAiError(e instanceof Error ? e.message : String(e));
     } finally {
-      setAiLoading(false);
+      if (aiRequestWordRef.current === thisWord) setAiLoading(false);
     }
   };
 
@@ -273,62 +284,61 @@ export function DictResultPanel() {
 
       {/* Dict results */}
       <ScrollArea className="flex-1">
-        {dictResults.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-            <p className="text-sm">未在已启用词典中找到 "{selectedWord}"</p>
-            <p className="text-xs mt-1 opacity-60">请检查词典是否已正确导入</p>
-          </div>
-        ) : (
-          <div className="px-5 py-4 space-y-0">
-            {/* AI explanation section */}
-            {aiEnabled && (
-              <div className="mb-2">
-                <div className="flex items-center gap-2 py-2.5 w-full">
-                  {aiHtml ? (
-                    <button className="flex items-center gap-2 group" onClick={() => setAiCollapsed(v => !v)}>
-                      {aiCollapsed
-                        ? <ChevronRight size={12} className="text-muted-foreground shrink-0" />
-                        : <ChevronDown size={12} className="text-muted-foreground shrink-0" />}
-                    </button>
-                  ) : <span className="w-3" />}
-                  <Sparkles size={12} className="text-muted-foreground shrink-0" />
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider shrink-0">
-                    AI 解释
-                  </span>
-                  <Separator className="flex-1" />
-                  {!aiHtml && !aiLoading && (
-                    <button
-                      onClick={handleAsk}
-                      className="text-xs text-primary hover:text-primary/80 transition-colors shrink-0 ml-2"
-                    >
-                      生成
-                    </button>
-                  )}
-                  {aiLoading && <Loader2 size={12} className="animate-spin text-muted-foreground shrink-0 ml-2" />}
-                  {aiHtml && !aiLoading && (
-                    <button
-                      onClick={handleAsk}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-2"
-                    >
-                      重新生成
-                    </button>
-                  )}
-                </div>
-                {aiError && (
-                  <p className="text-xs text-destructive px-1 pb-2">{aiError}</p>
+        <div className="px-5 py-4 space-y-0">
+          {/* AI explanation section — always shown when enabled */}
+          {aiEnabled && (
+            <div className="mb-2">
+              <div className="flex items-center gap-2 py-2.5 w-full">
+                {aiHtml ? (
+                  <button className="flex items-center gap-2 group" onClick={() => setAiCollapsed(v => !v)}>
+                    {aiCollapsed
+                      ? <ChevronRight size={12} className="text-muted-foreground shrink-0" />
+                      : <ChevronDown size={12} className="text-muted-foreground shrink-0" />}
+                  </button>
+                ) : <span className="w-3" />}
+                <Sparkles size={12} className="text-muted-foreground shrink-0" />
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider shrink-0">
+                  AI 解释
+                </span>
+                <Separator className="flex-1" />
+                {!aiHtml && !aiLoading && (
+                  <button
+                    onClick={handleAsk}
+                    className="text-xs text-primary hover:text-primary/80 transition-colors shrink-0 ml-2"
+                  >
+                    生成
+                  </button>
                 )}
-                {aiHtml && !aiCollapsed && (
-                  <DictContent html={aiHtml} dictId="ai" />
+                {aiLoading && <Loader2 size={12} className="animate-spin text-muted-foreground shrink-0 ml-2" />}
+                {aiHtml && !aiLoading && (
+                  <button
+                    onClick={handleAsk}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-2"
+                  >
+                    重新生成
+                  </button>
                 )}
-                <div className="h-4" />
               </div>
-            )}
+              {aiError && (
+                <p className="text-xs text-destructive px-1 pb-2">{aiError}</p>
+              )}
+              {aiHtml && !aiCollapsed && (
+                <DictContent html={aiHtml} dictId="ai" />
+              )}
+              <div className="h-4" />
+            </div>
+          )}
 
-            {dictResults.map((result, idx) => {
+          {dictResults.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+              <p className="text-sm">未在已启用词典中找到 "{selectedWord}"</p>
+              <p className="text-xs mt-1 opacity-60">请检查词典是否已正确导入</p>
+            </div>
+          ) : (
+            dictResults.map((result, idx) => {
               const isCollapsed = collapsed.has(result.dict_id);
               return (
                 <div key={`${result.dict_id}-${idx}`} id={`dict-section-${result.dict_id}`}>
-                  {/* Dict header */}
                   <button
                     className="flex items-center gap-2 py-2.5 w-full text-left group"
                     onClick={() => toggleCollapse(result.dict_id)}
@@ -352,9 +362,9 @@ export function DictResultPanel() {
                   )}
                 </div>
               );
-            })}
-          </div>
-        )}
+            })
+          )}
+        </div>
       </ScrollArea>
     </div>
   );
