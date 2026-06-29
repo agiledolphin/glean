@@ -35,6 +35,7 @@ export function DictResultPanel() {
   }, []);
 
   // Reset state when the word changes; also invalidates any in-flight AI request
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     aiRequestWordRef.current = null;
     setCollapsed(new Set());
@@ -43,6 +44,7 @@ export function DictResultPanel() {
     setAiLoading(false);
     setAiCollapsed(false);
   }, [selectedWord]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleAsk = async () => {
     if (!selectedWord) return;

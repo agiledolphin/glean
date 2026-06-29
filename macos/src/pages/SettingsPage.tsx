@@ -54,7 +54,6 @@ export function SettingsPage() {
       setLlmApiKey(key ?? "");
       setLlmModel(model ?? "deepseek-v4-flash");
     }).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLlmSave = async () => {
