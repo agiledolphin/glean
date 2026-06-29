@@ -1,7 +1,9 @@
 import SwiftUI
+import GRDB
 
 struct SearchView: View {
     @Environment(\.dictManager) private var dictManager
+    @Environment(\.appDatabase) private var db
     @State private var query = ""
     @State private var candidates: [String] = []
     @State private var debounceTask: Task<Void, Never>?
@@ -43,12 +45,34 @@ struct SearchView: View {
         List(candidates, id: \.self) { word in
             Button {
                 selectedWord = word
+                Task { await recordQuery(word) }
             } label: {
                 Text(word)
                     .foregroundStyle(.primary)
             }
         }
         .listStyle(.plain)
+    }
+
+    private func recordQuery(_ word: String) async {
+        do {
+            try await db.dbWriter.write { db in
+                var history = QueryHistory(id: nil, word: word, dictId: nil, queriedAt: Date())
+                try history.insert(db)
+
+                if var stats = try WordStats.fetchOne(db, key: word) {
+                    stats.queryCount += 1
+                    stats.lastSeen = Date()
+                    try stats.update(db)
+                } else {
+                    let stats = WordStats(word: word, queryCount: 1,
+                                         firstSeen: Date(), lastSeen: Date())
+                    try stats.insert(db)
+                }
+            }
+        } catch {
+            print("recordQuery error: \(error)")
+        }
     }
 
     private func scheduleSearch(_ prefix: String) {

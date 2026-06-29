@@ -1,12 +1,16 @@
 import SwiftUI
+import GRDB
 
 struct DictDetailView: View {
     let word: String
     @Environment(\.dictManager) private var dictManager
+    @Environment(\.appDatabase) private var db
 
     @State private var results: [DictManager.DictResult] = []
     @State private var isLoading = true
     @State private var currentPage = 0
+    @State private var isInVocab = false
+    @State private var vocabLoading = false
 
     var body: some View {
         Group {
@@ -24,7 +28,50 @@ struct DictDetailView: View {
         }
         .navigationTitle(word)
         .navigationBarTitleDisplayMode(.inline)
-        .task { await load() }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    Task { await toggleVocab() }
+                } label: {
+                    Image(systemName: isInVocab ? "bookmark.fill" : "bookmark")
+                }
+                .disabled(vocabLoading)
+            }
+        }
+        .task {
+            await load()
+            await checkVocab()
+        }
+    }
+
+    private func checkVocab() async {
+        do {
+            isInVocab = try await db.dbWriter.read { db in
+                try VocabularyWord.filter(Column("word") == word).fetchCount(db) > 0
+            }
+        } catch {}
+    }
+
+    private func toggleVocab() async {
+        vocabLoading = true
+        defer { vocabLoading = false }
+        do {
+            if isInVocab {
+                _ = try await db.dbWriter.write { [word] db in
+                    try VocabularyWord.filter(Column("word") == word).deleteAll(db)
+                }
+                isInVocab = false
+            } else {
+                try await db.dbWriter.write { [word] db in
+                    var v = VocabularyWord(word: word, note: nil, starred: false,
+                                          createdAt: Date(), updatedAt: Date())
+                    try v.insert(db)
+                }
+                isInVocab = true
+            }
+        } catch {
+            print("toggleVocab error: \(error)")
+        }
     }
 
     // MARK: - Page view
@@ -40,7 +87,7 @@ struct DictDetailView: View {
             // Swipeable pages — each WKWebView scrolls independently
             TabView(selection: $currentPage) {
                 ForEach(results.indices, id: \.self) { i in
-                    DictPageView(result: results[i])
+                    DictPageView(result: results[i], dictManager: dictManager)
                         .tag(i)
                 }
             }
@@ -93,9 +140,10 @@ struct DictDetailView: View {
 
 struct DictPageView: UIViewControllerRepresentable {
     let result: DictManager.DictResult
+    let dictManager: DictManager
 
     func makeUIViewController(context: Context) -> DictPageVC {
-        DictPageVC(result: result)
+        DictPageVC(result: result, dictManager: dictManager)
     }
 
     func updateUIViewController(_ vc: DictPageVC, context: Context) {
@@ -105,8 +153,9 @@ struct DictPageView: UIViewControllerRepresentable {
 
 import WebKit
 import UIKit
+import AVFoundation
 
-final class DictPageVC: UIViewController {
+final class DictPageVC: UIViewController, WKNavigationDelegate {
     private let webView: WKWebView = {
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
@@ -116,9 +165,12 @@ final class DictPageVC: UIViewController {
         return wv
     }()
 
+    private let dictManager: DictManager
     private var currentResult: DictManager.DictResult?
+    private var audioPlayer: AVAudioPlayer?
 
-    init(result: DictManager.DictResult) {
+    init(result: DictManager.DictResult, dictManager: DictManager) {
+        self.dictManager = dictManager
         self.currentResult = result
         super.init(nibName: nil, bundle: nil)
     }
@@ -128,6 +180,7 @@ final class DictPageVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        webView.navigationDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(webView)
         NSLayoutConstraint.activate([
@@ -159,5 +212,31 @@ final class DictPageVC: UIViewController {
         """
         let baseURL = result.dictDirPath.map { URL(fileURLWithPath: $0) }
         webView.loadHTMLString(html, baseURL: baseURL)
+    }
+
+    // MARK: - WKNavigationDelegate
+
+    func webView(_ webView: WKWebView,
+                 decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+        guard let url = navigationAction.request.url else { return .allow }
+        if url.scheme == "sound" {
+            // sound://path/to/file.mp3 → path/to/file.mp3
+            let path = (url.host ?? "") + url.path
+            let soundPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
+            playSound(soundPath)
+            return .cancel
+        }
+        // Allow initial HTML load; block other link navigation
+        return navigationAction.navigationType == .other ? .allow : .cancel
+    }
+
+    private func playSound(_ soundPath: String) {
+        guard let data = dictManager.audioData(for: soundPath), !data.isEmpty else { return }
+        do {
+            audioPlayer = try AVAudioPlayer(data: data)
+            audioPlayer?.play()
+        } catch {
+            print("DictPageVC: audio play error: \(error)")
+        }
     }
 }

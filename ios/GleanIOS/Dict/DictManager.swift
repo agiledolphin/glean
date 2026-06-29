@@ -6,6 +6,7 @@ import SQLite3
 @Observable
 final class DictManager: @unchecked Sendable {
     var dicts: [MdxDict] = []
+    private var mddDicts: [MddDict] = []
     var isReady = false
 
     // MARK: - Load
@@ -23,6 +24,7 @@ final class DictManager: @unchecked Sendable {
         }
 
         var loaded: [MdxDict] = []
+        var loadedMdd: [MddDict] = []
         for subdir in subdirs {
             guard let mdxURL = findMdx(in: subdir) else { continue }
             do {
@@ -32,10 +34,37 @@ final class DictManager: @unchecked Sendable {
             } catch {
                 print("MdxKit: failed to load \(mdxURL.lastPathComponent): \(error)")
             }
+            // Load paired .mdd files in the same directory
+            if let mddURLs = try? FileManager.default.contentsOfDirectory(at: subdir, includingPropertiesForKeys: nil)
+                .filter({ $0.pathExtension.lowercased() == "mdd" }) {
+                for mddURL in mddURLs {
+                    if let mdd = try? MddDict(path: mddURL.path) {
+                        loadedMdd.append(mdd)
+                        print("MdxKit: loaded MDD \(mddURL.lastPathComponent)")
+                    }
+                }
+            }
         }
 
         dicts = Self.sorted(loaded, using: Self.gleanDbPath)
+        mddDicts = loadedMdd
         isReady = true
+    }
+
+    // MARK: - Audio
+
+    /// Look up audio data for a sound:// link (e.g. "uk/hello.mp3" or "hello.mp3").
+    func audioData(for soundPath: String) -> Data? {
+        // MDD keys are like `\hello.mp3` or `\uk\hello.mp3` (backslash-prefixed, backslash-separated)
+        let normalized = soundPath.replacingOccurrences(of: "/", with: "\\")
+        let key = normalized.hasPrefix("\\") ? normalized : "\\\(normalized)"
+        for mdd in mddDicts {
+            if let data = try? mdd.lookup(key: key), !data.isEmpty { return data }
+            // Also try suffix match (some dicts omit directory prefix)
+            if let matchKey = mdd.firstKey(endingWith: "\\\(normalized.components(separatedBy: "\\").last ?? normalized)"),
+               let data = try? mdd.lookup(key: matchKey), !data.isEmpty { return data }
+        }
+        return nil
     }
 
     // MARK: - Search
