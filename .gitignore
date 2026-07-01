@@ -13,6 +13,7 @@ macos/src-tauri/src/dict/
 
 # iOS app
 ios/MdxKit/.build/
+ios/build/
 ios/GleanIOS.xcodeproj/xcuserdata/
 ios/GleanIOS.xcodeproj/project.xcworkspace/xcuserdata/
 

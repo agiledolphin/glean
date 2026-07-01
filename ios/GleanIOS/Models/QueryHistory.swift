@@ -3,6 +3,8 @@ import Foundation
 
 struct QueryHistory: Codable, FetchableRecord, MutablePersistableRecord {
     static let databaseTableName = "query_history"
+    nonisolated(unsafe) static let databaseColumnDecodingStrategy = DatabaseColumnDecodingStrategy.convertFromSnakeCase
+    nonisolated(unsafe) static let databaseColumnEncodingStrategy = DatabaseColumnEncodingStrategy.convertToSnakeCase
 
     var id: Int64?
     var word: String
@@ -16,6 +18,8 @@ struct QueryHistory: Codable, FetchableRecord, MutablePersistableRecord {
 
 struct WordStats: Codable, FetchableRecord, PersistableRecord {
     static let databaseTableName = "word_stats"
+    nonisolated(unsafe) static let databaseColumnDecodingStrategy = DatabaseColumnDecodingStrategy.convertFromSnakeCase
+    nonisolated(unsafe) static let databaseColumnEncodingStrategy = DatabaseColumnEncodingStrategy.convertToSnakeCase
 
     var word: String
     var queryCount: Int

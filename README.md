@@ -8,7 +8,7 @@
 | 平台 | 状态 | 技术栈 |
 |------|------|--------|
 | macOS | ✅ v0.6.1 | Tauri 2.x + Rust + React 19 |
-| iOS | ✅ v0.5.0（查词可用） | SwiftUI + MdxKit (Swift) |
+| iOS | ✅ v0.6.0（查词/收藏/历史/生词本/发音） | SwiftUI + MdxKit (Swift) |
 
 ---
 

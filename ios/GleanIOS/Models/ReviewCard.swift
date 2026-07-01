@@ -3,6 +3,8 @@ import Foundation
 
 struct ReviewCard: Codable, FetchableRecord, PersistableRecord {
     static let databaseTableName = "review_cards"
+    nonisolated(unsafe) static let databaseColumnDecodingStrategy = DatabaseColumnDecodingStrategy.convertFromSnakeCase
+    nonisolated(unsafe) static let databaseColumnEncodingStrategy = DatabaseColumnEncodingStrategy.convertToSnakeCase
 
     var word: String
     var interval: Int
