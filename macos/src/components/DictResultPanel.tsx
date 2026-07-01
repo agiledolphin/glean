@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { open } from "@tauri-apps/plugin-shell";
 import appIcon from "@/assets/app-icon.png";
 import { BookmarkPlus, BookmarkCheck, Volume2, Loader2, ChevronDown, ChevronRight, Tag as TagIcon, Sparkles } from "lucide-react";
 import { useAppStore } from "@/store";
@@ -165,6 +166,10 @@ export function DictResultPanel() {
     );
   }
 
+  // Keep focus in the search input when clicking toolbar buttons, so typing
+  // resumes immediately without needing "/" or a manual click back into it.
+  const preventFocusSteal = (e: React.MouseEvent) => e.preventDefault();
+
   const handlePanelKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
     e.preventDefault();
@@ -183,6 +188,7 @@ export function DictResultPanel() {
           <Button
             variant="ghost"
             size="icon"
+            onMouseDown={preventFocusSteal}
             onClick={handlePlay}
             className={cn("h-7 w-7 shrink-0", playingAudio && "text-primary")}
             title="发音"
@@ -225,6 +231,7 @@ export function DictResultPanel() {
             <Button
               variant="ghost"
               size="icon"
+              onMouseDown={preventFocusSteal}
               onClick={() => setShowTagPanel(v => !v)}
               className={cn("h-7 w-7 shrink-0", activeTagIds.size > 0 ? "text-foreground" : "text-muted-foreground")}
               title="选择标签"
@@ -268,6 +275,7 @@ export function DictResultPanel() {
           <Button
             variant={inVocab ? "secondary" : "outline"}
             size="sm"
+            onMouseDown={preventFocusSteal}
             onClick={handleVocabToggle}
             disabled={vocabLoading}
             className="gap-1.5 text-xs h-7"
@@ -400,6 +408,16 @@ function rewriteUrls(content: string, dictId: string): string {
   return content;
 }
 
+// MDX cross-reference links are typically bare relative hrefs (e.g. href="greeting"),
+// sometimes prefixed with a custom scheme (e.g. "entry://greeting"). Strip any scheme
+// and fragment/query so the remainder can be looked up as a headword.
+function extractEntryWord(href: string): string {
+  let w = href.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:(\/\/)?/, "");
+  w = w.split("#")[0].split("?")[0];
+  try { w = decodeURIComponent(w); } catch { /* leave as-is if malformed */ }
+  return w.trim();
+}
+
 function DictContent({ html, css, dictId }: { html: string; css?: string; dictId: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -420,8 +438,13 @@ function DictContent({ html, css, dictId }: { html: string; css?: string; dictId
         e.preventDefault();
         e.stopPropagation();
         playMddAudio(href.slice("sound://".length)).catch(console.error);
+      } else if (href.startsWith("http://") || href.startsWith("https://")) {
+        e.preventDefault();
+        open(href).catch(console.error);
       } else if (href && !href.startsWith("#")) {
         e.preventDefault();
+        const word = extractEntryWord(href);
+        if (word) useAppStore.getState().setSelectedWord(word);
       }
     };
 
