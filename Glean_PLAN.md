@@ -11,7 +11,7 @@
 | 产品名称 | 拾词 / Glean |
 | 目标平台 | macOS ✅、iOS（开发中）、Windows（后续） |
 | 核心用户 | 碎片化记录词汇的外语学习者 |
-| 当前版本 | v0.6.1 |
+| 当前版本 | v0.6.2 |
 | macOS 技术栈 | Tauri 2.x + Rust + React 19 + TypeScript 6 + Vite 8 |
 | iOS 技术栈 | SwiftUI + GRDB.swift 6.x + MdxKit（Swift Package） |
 | 数据存储 | SQLite（本地，两端 schema 一致）|
@@ -360,6 +360,8 @@ CREATE TABLE dictionaries (
 - [x] Logo 无边框化：全局 mix-blend-mode: multiply，图标直接融入暖纸背景
 - [x] 依赖全面升级：React 19、TypeScript 6、Vite 8、Tailwind CSS 4、ESLint 10
 - [x] Markdown 导出重构：平铺格式 `word  #tag1 #tag2`，原生 Save 对话框选路径/文件名
+- [x] 收藏/发音/标签按钮 mousedown 时阻止抢占搜索框焦点，收藏后可直接继续打字查词
+- [x] 词典释义内部引用链接可点击跳转查词（此前无条件 preventDefault，点击无反应）；http(s) 链接改为系统浏览器打开
 - [ ] 设置页完善（发音偏好、主题等）
 
 ### Phase 5 — 背单词与进阶功能（进行中）
