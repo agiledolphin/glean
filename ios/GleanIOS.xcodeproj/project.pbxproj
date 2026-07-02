@@ -20,6 +20,7 @@
 		CBC5840D8F5B47C3AF22B07E /* DictManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FC1FDE207E224CF51ADC2A3 /* DictManager.swift */; };
 		DD3A43DCD1947E75277FA4BE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26DF3BEC0AB3178D24C879B7 /* ContentView.swift */; };
 		DDDB37EDB43D7A569F6CD119 /* GleanApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C78A7E0AE7F4747EFCED254 /* GleanApp.swift */; };
+		E6AE4C2A83C89BD942E01C82 /* DictManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 777C2DC1FFFBF9FFF07E377E /* DictManagerView.swift */; };
 		EB0A099DB4A206A16F5671D2 /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9906020588A78DCE57EE4AD5 /* ReviewView.swift */; };
 		EED9728C10A9DAF43B5B0520 /* HtmlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC305F80824194BED2D64551 /* HtmlView.swift */; };
 		F8A20D70FEAFDBF85851F4C7 /* VocabularyWord.swift in Sources */ = {isa = PBXBuildFile; fileRef = F936984A28D0547966B8538B /* VocabularyWord.swift */; };
@@ -34,6 +35,7 @@
 		2FC1FDE207E224CF51ADC2A3 /* DictManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictManager.swift; sourceTree = "<group>"; };
 		49BE46C257AD7299D1396EDE /* GleanIOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GleanIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		52D8D81AAF19E7F41BBE1DCB /* ReviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewCard.swift; sourceTree = "<group>"; };
+		777C2DC1FFFBF9FFF07E377E /* DictManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictManagerView.swift; sourceTree = "<group>"; };
 		7E90C025EFAE7C67615B3F22 /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
 		9906020588A78DCE57EE4AD5 /* ReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewView.swift; sourceTree = "<group>"; };
 		AC305F80824194BED2D64551 /* HtmlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlView.swift; sourceTree = "<group>"; };
@@ -82,6 +84,7 @@
 			isa = PBXGroup;
 			children = (
 				DD667A0F77EC8B2A600F9507 /* DictDetailView.swift */,
+				777C2DC1FFFBF9FFF07E377E /* DictManagerView.swift */,
 				AC305F80824194BED2D64551 /* HtmlView.swift */,
 				9906020588A78DCE57EE4AD5 /* ReviewView.swift */,
 				1BAEB886A80F303DF20729AF /* SearchView.swift */,
@@ -222,6 +225,7 @@
 				A0326C633B5D8ADD1828933F /* DictDetailView.swift in Sources */,
 				CBC5840D8F5B47C3AF22B07E /* DictManager.swift in Sources */,
 				7B3AE7D7EC551EB05C753B93 /* DictManagerEnvironment.swift in Sources */,
+				E6AE4C2A83C89BD942E01C82 /* DictManagerView.swift in Sources */,
 				DDDB37EDB43D7A569F6CD119 /* GleanApp.swift in Sources */,
 				EED9728C10A9DAF43B5B0520 /* HtmlView.swift in Sources */,
 				400F6020F83EF317BA7DA889 /* QueryHistory.swift in Sources */,
@@ -313,7 +317,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.6.0;
+				MARKETING_VERSION = 0.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jiaming.glean.ios;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
@@ -391,7 +395,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.6.0;
+				MARKETING_VERSION = 0.7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jiaming.glean.ios;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;

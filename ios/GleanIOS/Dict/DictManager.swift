@@ -2,6 +2,7 @@ import MdxKit
 import Observation
 import Foundation
 import SQLite3
+import CryptoKit
 
 @Observable
 final class DictManager: @unchecked Sendable {
@@ -49,6 +50,78 @@ final class DictManager: @unchecked Sendable {
         dicts = Self.sorted(loaded, using: Self.gleanDbPath)
         mddDicts = loadedMdd
         isReady = true
+    }
+
+    // MARK: - Import / Delete
+
+    enum ImportError: LocalizedError {
+        case noMdxFound
+        case invalidStem
+
+        var errorDescription: String? {
+            switch self {
+            case .noMdxFound: return "所选文件夹内没有找到 .mdx 词典文件"
+            case .invalidStem: return "无法解析词典文件名"
+            }
+        }
+    }
+
+    /// Import a dictionary from a user-picked folder (containing a .mdx and optional
+    /// .mdd/.css files) into Documents/dicts/<id>/, then reload all dictionaries.
+    /// `sourceDir` must be a security-scoped URL as returned by a document picker.
+    func importDictionary(from sourceDir: URL) async throws {
+        let accessing = sourceDir.startAccessingSecurityScopedResource()
+        defer { if accessing { sourceDir.stopAccessingSecurityScopedResource() } }
+
+        let fm = FileManager.default
+        guard let mdxSrc = (try? fm.contentsOfDirectory(at: sourceDir, includingPropertiesForKeys: nil))?
+            .first(where: { $0.pathExtension.lowercased() == "mdx" }) else {
+            throw ImportError.noMdxFound
+        }
+
+        let stem = mdxSrc.deletingPathExtension().lastPathComponent
+        guard !stem.isEmpty else { throw ImportError.invalidStem }
+
+        // Stable ID from the mdx stem (same scheme as macOS: first 8 bytes of SHA256, hex-encoded)
+        // so re-importing the same dictionary is idempotent and directory names match across platforms.
+        let digest = SHA256.hash(data: Data(stem.utf8))
+        let id = digest.prefix(8).map { String(format: "%02x", $0) }.joined()
+
+        let destDir = Self.dictsDirectory.appendingPathComponent(id)
+        try fm.createDirectory(at: destDir, withIntermediateDirectories: true)
+
+        if sourceDir.standardizedFileURL != destDir.standardizedFileURL {
+            let entries = (try? fm.contentsOfDirectory(at: sourceDir, includingPropertiesForKeys: [.isDirectoryKey])) ?? []
+            for entry in entries {
+                guard (try? entry.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) != true else { continue }
+                let dest = destDir.appendingPathComponent(entry.lastPathComponent)
+                try? fm.removeItem(at: dest)
+                try fm.copyItem(at: entry, to: dest)
+            }
+        }
+
+        await preload()
+    }
+
+    /// Whether dictionaries can be deleted from this environment. On the Simulator,
+    /// `dictsDirectory` points at the host Mac's real `~/.glean/dicts/`, which the
+    /// macOS app also reads — deleting there would destroy the user's real files.
+    /// Only a real device's sandboxed Documents/dicts/ is safe to delete from.
+    static var deletionAllowed: Bool {
+        #if targetEnvironment(simulator)
+        return false
+        #else
+        return true
+        #endif
+    }
+
+    /// Delete a loaded dictionary's backing directory, then reload.
+    /// No-op on the Simulator — see `deletionAllowed`.
+    func deleteDictionary(_ dict: MdxDict) async {
+        guard Self.deletionAllowed else { return }
+        let dir = URL(fileURLWithPath: dict.filePath).deletingLastPathComponent()
+        try? FileManager.default.removeItem(at: dir)
+        await preload()
     }
 
     // MARK: - Audio

@@ -8,6 +8,7 @@ struct SearchView: View {
     @State private var candidates: [String] = []
     @State private var debounceTask: Task<Void, Never>?
     @State private var selectedWord: String? = nil
+    @State private var showDictManager = false
 
     var body: some View {
         NavigationStack {
@@ -37,6 +38,18 @@ struct SearchView: View {
             .onChange(of: query) { _, newValue in scheduleSearch(newValue) }
             .navigationDestination(item: $selectedWord) { word in
                 DictDetailView(word: word)
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        showDictManager = true
+                    } label: {
+                        Image(systemName: "books.vertical")
+                    }
+                }
+            }
+            .sheet(isPresented: $showDictManager) {
+                DictManagerView()
             }
         }
     }

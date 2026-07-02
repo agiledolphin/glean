@@ -407,14 +407,15 @@ CREATE TABLE dictionaries (
 - [x] CSS 注入（baseCSS + dict.css，`li:empty { display: none }` 修复柯林斯空频率条）
 - [x] baseURL 设为词典目录，支持相对路径资源加载
 
-### iOS Phase 3 — 生词本与发音（v0.6.0，Simulator 验证通过 ✅）
+### iOS Phase 3 — 生词本、发音与词典导入（v0.7.0，全部完成 ✅）
 
 - [x] 收藏按钮（加入生词本，DictDetailView 右上角书签，写入 GRDB vocabulary 表）
 - [x] 查询历史写入 GRDB（SearchView 选词时写 query_history + upsert word_stats）
 - [x] VocabularyView 完善（横向标签筛选条，按 tag_id 过滤）
 - [x] 词典内 `sound://` 链接拦截 → AVFoundation 播放 MDD 音频（WKNavigationDelegate async 版）
 - [x] 修复 GRDB Record camelCase/snake_case 字段映射缺失导致的静默写入失败（加 `databaseColumnDecodingStrategy`/`databaseColumnEncodingStrategy`）
-- [ ] 词典文件导入（Files App，`UIDocumentPickerViewController`）
+- [x] 词典文件导入：`DictManagerView` + `.fileImporter(allowedContentTypes: [.folder])`，选目录后 flat copy 到 `Documents/dicts/<id>/`（`id` = SHA256(mdx stem) 前 8 字节 hex，与 macOS 端算法一致，跨端导入同一词典会落到同一目录）
+- [x] Simulator 下屏蔽删除词典（`DictManager.deletionAllowed`）——Simulator 的 `dictsDirectory` 直接指向 Mac 真实的 `~/.glean/dicts/`，与 macOS 版共享，误删会破坏 Mac 端文件；仅真机（沙盒内 `Documents/dicts/`）允许删除
 
 ### iOS Phase 4 — 背单词与完善（待开发）
 
