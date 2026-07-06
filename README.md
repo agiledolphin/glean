@@ -51,6 +51,20 @@
 2. 打开 **设置 → 词典管理**，点击「导入词典」，选择词典所在目录
 3. 导入完成后词典自动启用，搜索框即可使用
 
+### iOS 真机安装
+
+拾词 iOS 版尚未上架 App Store，需要用 Xcode 直接签名安装到自己的 iPhone（免费 Apple ID 即可，不需要付费 Developer Program）：
+
+1. Xcode → Settings → Accounts，登录 Mac 和 iPhone 共用的 Apple ID
+2. 打开 `ios/GleanIOS.xcodeproj`，选中 `GleanIOS` target → **Signing & Capabilities**，勾选 "Automatically manage signing"，Team 选刚登录的账号——选好后面板上会显示一串 10 位的 Team ID
+3. `project.yml` 里的 `DEVELOPMENT_TEAM` 是 `${GLEAN_DEV_TEAM}` 环境变量占位符（Team ID 不提交进公开仓库），执行 `export GLEAN_DEV_TEAM=<上一步看到的 Team ID>` 后再 `cd ios && xcodegen generate` 重新生成项目，让签名配置生效
+4. iPhone：设置 → 隐私与安全性 → **开发者模式**，打开后重启一次
+5. 用数据线连接 Mac，若手机弹出"信任这台电脑"，点信任
+6. 在 Xcode 里选中你的设备作为运行目标，点 Run（或用 `xcodebuild -destination 'platform=iOS,id=<设备 UDID>' -allowProvisioningUpdates` 编译后 `xcrun devicectl device install app` 安装）
+7. 首次启动会被系统拦截，需要在 iPhone **设置 → 通用 → VPN与设备管理** 里找到对应的开发者 App，点"信任"
+
+真机上的词典目录是独立沙盒（不像 Simulator 那样能读到 Mac 的 `~/.glean/dicts/`），需要用 App 内「词典管理 → 导入」手动导入词典文件夹。
+
 ---
 
 ## 本地开发

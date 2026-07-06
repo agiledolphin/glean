@@ -11,6 +11,9 @@ struct DictDetailView: View {
     @State private var currentPage = 0
     @State private var isInVocab = false
     @State private var vocabLoading = false
+    @State private var allTags: [Tag] = []
+    @State private var activeTagIds: Set<Int64> = []
+    @State private var showTagPicker = false
 
     var body: some View {
         Group {
@@ -31,6 +34,15 @@ struct DictDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
+                    Task { await loadTags() }
+                    showTagPicker = true
+                } label: {
+                    Image(systemName: activeTagIds.isEmpty ? "tag" : "tag.fill")
+                }
+                .disabled(!isInVocab)
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
                     Task { await toggleVocab() }
                 } label: {
                     Image(systemName: isInVocab ? "bookmark.fill" : "bookmark")
@@ -38,18 +50,39 @@ struct DictDetailView: View {
                 .disabled(vocabLoading)
             }
         }
+        .sheet(isPresented: $showTagPicker) {
+            TagPickerView(
+                allTags: allTags,
+                activeTagIds: activeTagIds,
+                onToggle: toggleTag,
+                onCreate: createTag,
+                onDelete: deleteTag,
+                onSetDefault: setDefaultTag
+            )
+        }
         .task {
-            await load()
-            await checkVocab()
+            async let loadResults: () = load()
+            async let vocabCheck: () = checkVocab()
+            async let tagsLoad: () = loadTags()
+            _ = await (loadResults, vocabCheck, tagsLoad)
         }
     }
 
     private func checkVocab() async {
         do {
-            isInVocab = try await db.dbWriter.read { db in
-                try VocabularyWord.filter(Column("word") == word).fetchCount(db) > 0
+            let result = try await db.dbWriter.read { [word] db -> (Bool, Set<Int64>) in
+                guard let vocabId = try VocabularyWord.filter(Column("word") == word).fetchOne(db)?.id else {
+                    return (false, [])
+                }
+                let tagIds = try VocabularyTag.filter(Column("vocabulary_id") == vocabId).fetchAll(db).map(\.tagId)
+                return (true, Set(tagIds))
             }
-        } catch {}
+            isInVocab = result.0
+            activeTagIds = result.1
+        } catch {
+            isInVocab = false
+            activeTagIds = []
+        }
     }
 
     private func toggleVocab() async {
@@ -60,17 +93,98 @@ struct DictDetailView: View {
                 _ = try await db.dbWriter.write { [word] db in
                     try VocabularyWord.filter(Column("word") == word).deleteAll(db)
                 }
-                isInVocab = false
             } else {
                 try await db.dbWriter.write { [word] db in
                     var v = VocabularyWord(word: word, note: nil, starred: false,
                                           createdAt: Date(), updatedAt: Date())
                     try v.insert(db)
+                    // Auto-associate the default tag, if one is set (mirrors macOS add_to_vocabulary)
+                    if let vocabId = v.id,
+                       let defaultTag = try Tag.filter(Column("is_default") == true).fetchOne(db),
+                       let tagId = defaultTag.id {
+                        try VocabularyTag(vocabularyId: vocabId, tagId: tagId).insert(db, onConflict: .ignore)
+                    }
                 }
-                isInVocab = true
             }
+            await checkVocab()
         } catch {
             print("toggleVocab error: \(error)")
+        }
+    }
+
+    // MARK: - Tags
+
+    private func loadTags() async {
+        allTags = (try? await db.dbWriter.read { db in try Tag.order(Column("name")).fetchAll(db) }) ?? []
+    }
+
+    private func toggleTag(_ tagId: Int64) {
+        let wasActive = activeTagIds.contains(tagId)
+        if wasActive { activeTagIds.remove(tagId) } else { activeTagIds.insert(tagId) }
+        Task {
+            do {
+                try await db.dbWriter.write { [word] db in
+                    guard let vocabId = try VocabularyWord.filter(Column("word") == word).fetchOne(db)?.id else { return }
+                    if wasActive {
+                        try VocabularyTag
+                            .filter(Column("vocabulary_id") == vocabId)
+                            .filter(Column("tag_id") == tagId)
+                            .deleteAll(db)
+                    } else {
+                        try VocabularyTag(vocabularyId: vocabId, tagId: tagId).insert(db, onConflict: .ignore)
+                    }
+                }
+            } catch {
+                print("toggleTag error: \(error)")
+            }
+        }
+    }
+
+    private func createTag(name: String, color: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        Task {
+            do {
+                try await db.dbWriter.write { db in
+                    if try Tag.filter(Column("name") == trimmed).fetchCount(db) == 0 {
+                        var t = Tag(id: nil, name: trimmed, color: color, isDefault: false)
+                        try t.insert(db)
+                    }
+                }
+                await loadTags()
+            } catch {
+                print("createTag error: \(error)")
+            }
+        }
+    }
+
+    private func deleteTag(_ tagId: Int64) {
+        activeTagIds.remove(tagId)
+        Task {
+            do {
+                try await db.dbWriter.write { db in
+                    try Tag.filter(Column("id") == tagId).deleteAll(db)
+                }
+                await loadTags()
+            } catch {
+                print("deleteTag error: \(error)")
+            }
+        }
+    }
+
+    private func setDefaultTag(_ tagId: Int64?) {
+        Task {
+            do {
+                try await db.dbWriter.write { db in
+                    try db.execute(sql: "UPDATE tags SET is_default = 0")
+                    if let tagId {
+                        try db.execute(sql: "UPDATE tags SET is_default = 1 WHERE id = ?", arguments: [tagId])
+                    }
+                }
+                await loadTags()
+            } catch {
+                print("setDefaultTag error: \(error)")
+            }
         }
     }
 

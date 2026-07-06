@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0924C440C2C5EB4D25DB5530 /* TagPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB60897EE10C0ABF8C2C3D1 /* TagPickerView.swift */; };
 		24FF1509974CB99F12982F50 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BAEB886A80F303DF20729AF /* SearchView.swift */; };
 		3B5F820757BD11FB0B1565A1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BED4F061D69B69885FD170C9 /* Assets.xcassets */; };
 		3E242EA41E8905D7CBA0ECBC /* VocabularyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19A30AD300158A261BEC619 /* VocabularyView.swift */; };
@@ -36,6 +37,7 @@
 		49BE46C257AD7299D1396EDE /* GleanIOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GleanIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		52D8D81AAF19E7F41BBE1DCB /* ReviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewCard.swift; sourceTree = "<group>"; };
 		777C2DC1FFFBF9FFF07E377E /* DictManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictManagerView.swift; sourceTree = "<group>"; };
+		7DB60897EE10C0ABF8C2C3D1 /* TagPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPickerView.swift; sourceTree = "<group>"; };
 		7E90C025EFAE7C67615B3F22 /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
 		9906020588A78DCE57EE4AD5 /* ReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewView.swift; sourceTree = "<group>"; };
 		AC305F80824194BED2D64551 /* HtmlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HtmlView.swift; sourceTree = "<group>"; };
@@ -88,6 +90,7 @@
 				AC305F80824194BED2D64551 /* HtmlView.swift */,
 				9906020588A78DCE57EE4AD5 /* ReviewView.swift */,
 				1BAEB886A80F303DF20729AF /* SearchView.swift */,
+				7DB60897EE10C0ABF8C2C3D1 /* TagPickerView.swift */,
 				B19A30AD300158A261BEC619 /* VocabularyView.swift */,
 			);
 			path = Views;
@@ -179,6 +182,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
+					E1DC9C5E8F8E3867DA4B82BC = {
+						DevelopmentTeam = "${GLEAN_DEV_TEAM}";
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = 484E1FB3EF97DAE23EA6BFA3 /* Build configuration list for PBXProject "GleanIOS" */;
@@ -232,6 +239,7 @@
 				5F7EEFB282F675F215F04028 /* ReviewCard.swift in Sources */,
 				EB0A099DB4A206A16F5671D2 /* ReviewView.swift in Sources */,
 				24FF1509974CB99F12982F50 /* SearchView.swift in Sources */,
+				0924C440C2C5EB4D25DB5530 /* TagPickerView.swift in Sources */,
 				3E242EA41E8905D7CBA0ECBC /* VocabularyView.swift in Sources */,
 				F8A20D70FEAFDBF85851F4C7 /* VocabularyWord.swift in Sources */,
 			);
@@ -308,7 +316,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "${GLEAN_DEV_TEAM}";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "拾词";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -386,7 +396,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "${GLEAN_DEV_TEAM}";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "拾词";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

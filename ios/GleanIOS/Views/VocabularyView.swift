@@ -9,21 +9,20 @@ struct VocabularyView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
+            VStack(spacing: 0) {
+                if !allTags.isEmpty {
+                    tagFilter
+                    Divider()
+                }
                 if words.isEmpty {
                     ContentUnavailableView(
-                        "生词本为空",
+                        selectedTagId == nil ? "生词本为空" : "该标签下还没有单词",
                         systemImage: "book",
-                        description: Text("查词时点击书签即可加入生词本")
+                        description: Text(selectedTagId == nil ? "查词时点击书签即可加入生词本" : "换个标签，或点「全部」查看所有生词")
                     )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    VStack(spacing: 0) {
-                        if !allTags.isEmpty {
-                            tagFilter
-                            Divider()
-                        }
-                        wordList
-                    }
+                    wordList
                 }
             }
             .navigationTitle("生词本")

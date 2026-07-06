@@ -134,9 +134,10 @@ CREATE TABLE vocabulary (
 
 -- 标签
 CREATE TABLE tags (
-    id    INTEGER PRIMARY KEY AUTOINCREMENT,
-    name  TEXT NOT NULL UNIQUE,
-    color TEXT DEFAULT '#8FAF8F'
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT NOT NULL UNIQUE,
+    color      TEXT DEFAULT '#8FAF8F',
+    is_default INTEGER NOT NULL DEFAULT 0  -- 同一时间只有一个默认标签，收藏新词时自动关联
 );
 
 -- 生词-标签关联
@@ -416,11 +417,19 @@ CREATE TABLE dictionaries (
 - [x] 修复 GRDB Record camelCase/snake_case 字段映射缺失导致的静默写入失败（加 `databaseColumnDecodingStrategy`/`databaseColumnEncodingStrategy`）
 - [x] 词典文件导入：`DictManagerView` + `.fileImporter(allowedContentTypes: [.folder])`，选目录后 flat copy 到 `Documents/dicts/<id>/`（`id` = SHA256(mdx stem) 前 8 字节 hex，与 macOS 端算法一致，跨端导入同一词典会落到同一目录）
 - [x] Simulator 下屏蔽删除词典（`DictManager.deletionAllowed`）——Simulator 的 `dictsDirectory` 直接指向 Mac 真实的 `~/.glean/dicts/`，与 macOS 版共享，误删会破坏 Mac 端文件；仅真机（沙盒内 `Documents/dicts/`）允许删除
+- [x] 生词标签关联（`TagPickerView` 新文件，DictDetailView 工具栏 🏷️ 图标）：新建/勾选/取消/左滑删除标签，默认标签（星标）收藏新词时自动关联，逻辑对齐 macOS `DictResultPanel.tsx` + `vocab_commands.rs`（Simulator 验证通过，**未 commit**）
 
-### iOS Phase 4 — 背单词与完善（待开发）
+### 真机部署（2026-07-03，验证通过）
+
+- [x] 免费 Apple ID（Personal Team）签名安装到真机：`project.yml` 加 `DEVELOPMENT_TEAM`/`CODE_SIGN_STYLE: Automatic`，`xcodebuild -destination 'platform=iOS,id=<udid>' -allowProvisioningUpdates` 编译，`xcrun devicectl device install/launch app` 安装启动
+- [x] 真机首次启动前需在「设置 → 通用 → VPN与设备管理」手动信任开发者证书，否则报 "invalid code signature...profile has not been explicitly trusted"
+- 真机上 `Documents/dicts/` 是独立沙盒，不与 Mac 共享，需通过 v0.7.0 的"词典导入"功能手动导入词典
+- **仓库是 public 的，`DEVELOPMENT_TEAM` 不能写死提交**：`project.yml` 里用 `DEVELOPMENT_TEAM: "${GLEAN_DEV_TEAM}"` 环境变量占位符（xcodegen 原生支持 `${VAR}` 替换，未设置时保留字面量，不影响 Simulator 构建，只影响真机签名）。真机开发前需要 `export GLEAN_DEV_TEAM=<Team ID>` 再 `xcodegen generate`；注意每次 regenerate 都会用当前 shell 里的值重新写入 `project.pbxproj`，忘记 export 会导致签名回退成占位符
+
+### iOS Phase 4 — 背单词、同步与完善（待开发）
 
 - [ ] SM-2 复习会话（与 macOS 版逻辑对齐）
-- [ ] iCloud 同步（生词本 + 复习记录）
+- [ ] **CloudKit 同步**（生词本 + 标签 + 查询历史）：讨论阶段，未开始实现。**关键限制：CloudKit 无官方 Rust SDK**，macOS 端（Tauri + Rust）无法直接用原生框架，需通过 CloudKit Web Services（HTTP REST API，用现有 `reqwest` 依赖实现）；iOS 端用原生 CloudKit。前提：两端登录同一 Apple ID，免费账号即可，但需在两个 target 加 iCloud + CloudKit 能力并指向同一 container。建议先只同步 vocabulary + tags，query_history 数据量大意义相对小可后置
 - [ ] 深色模式适配
 - [ ] App 图标 / 启动页
 - [ ] 字体体系（匹配 macOS 版 Flexoki 风格）
