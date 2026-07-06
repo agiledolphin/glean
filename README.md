@@ -7,8 +7,8 @@
 
 | 平台 | 状态 | 技术栈 |
 |------|------|--------|
-| macOS | ✅ v0.6.2 | Tauri 2.x + Rust + React 19 |
-| iOS | ✅ v0.7.0（查词/收藏/历史/生词本/发音/导入） | SwiftUI + MdxKit (Swift) |
+| macOS | ✅ v0.6.3 | Tauri 2.x + Rust + React 19 |
+| iOS | ✅ v0.7.1（查词/收藏/历史/生词本/标签/发音/导入/真机） | SwiftUI + MdxKit (Swift) |
 
 ---
 
@@ -148,6 +148,15 @@ cd ios && ./generate.sh
 ---
 
 ## 版本历史
+
+### iOS v0.7.1
+- **生词标签关联**：收藏后可新建/勾选/取消/左滑删除标签，支持设默认标签（星标），收藏新词时自动关联默认标签
+- **真机安装支持**：免费 Apple ID（Personal Team）签名配置，可直接装到自己的 iPhone（见上方「iOS 真机安装」）
+- **App 图标**：补上 App 图标（此前主屏幕显示系统默认占位图标）
+- **修复**：词典释义内 "+ More About"/"Word Origin" 展开面板点不开（牛津/朗文等词典自带的 `.js` 交互脚本此前没有加载）
+
+### macOS v0.6.3
+- **修复**：词典释义内 "+ More About"/"Word Origin" 展开面板点不开（同上，MdxDict 新增 `js` 字段，Shadow DOM 场景下把脚本作为真实 `<script>` 元素注入而非走 innerHTML）
 
 ### iOS v0.7.0
 - **词典导入**：词典管理页支持选择包含 `.mdx`（可选 `.mdd`/`.css`）的文件夹导入，ID 生成规则与 macOS 端一致（`SHA256(文件名)` 前 8 字节 hex），跨端导入同一词典会落到同一目录

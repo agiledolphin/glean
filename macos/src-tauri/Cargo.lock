@@ -1162,7 +1162,7 @@ dependencies = [
 
 [[package]]
 name = "glean"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "anyhow",
  "base64 0.22.1",

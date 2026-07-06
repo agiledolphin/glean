@@ -11,7 +11,7 @@
 | 产品名称 | 拾词 / Glean |
 | 目标平台 | macOS ✅、iOS（开发中）、Windows（后续） |
 | 核心用户 | 碎片化记录词汇的外语学习者 |
-| 当前版本 | v0.6.2 |
+| 当前版本 | macOS v0.6.3 / iOS v0.7.1 |
 | macOS 技术栈 | Tauri 2.x + Rust + React 19 + TypeScript 6 + Vite 8 |
 | iOS 技术栈 | SwiftUI + GRDB.swift 6.x + MdxKit（Swift Package） |
 | 数据存储 | SQLite（本地，两端 schema 一致）|
@@ -409,7 +409,7 @@ CREATE TABLE dictionaries (
 - [x] CSS 注入（baseCSS + dict.css，`li:empty { display: none }` 修复柯林斯空频率条）
 - [x] baseURL 设为词典目录，支持相对路径资源加载
 
-### iOS Phase 3 — 生词本、发音与词典导入（v0.7.0，全部完成 ✅）
+### iOS Phase 3 — 生词本、发音与词典导入（v0.7.0-0.7.1，全部完成 ✅）
 
 - [x] 收藏按钮（加入生词本，DictDetailView 右上角书签，写入 GRDB vocabulary 表）
 - [x] 查询历史写入 GRDB（SearchView 选词时写 query_history + upsert word_stats）
