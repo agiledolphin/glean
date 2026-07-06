@@ -56,8 +56,8 @@
 拾词 iOS 版尚未上架 App Store，需要用 Xcode 直接签名安装到自己的 iPhone（免费 Apple ID 即可，不需要付费 Developer Program）：
 
 1. Xcode → Settings → Accounts，登录 Mac 和 iPhone 共用的 Apple ID
-2. 打开 `ios/GleanIOS.xcodeproj`，选中 `GleanIOS` target → **Signing & Capabilities**，勾选 "Automatically manage signing"，Team 选刚登录的账号——选好后面板上会显示一串 10 位的 Team ID
-3. `project.yml` 里的 `DEVELOPMENT_TEAM` 是 `${GLEAN_DEV_TEAM}` 环境变量占位符（Team ID 不提交进公开仓库）：把上一步看到的 Team ID 写进 `ios/.dev-team`（gitignored，一次性操作，内容就是那串 ID，别的什么都不用写），之后用 `./ios/generate.sh` 代替 `xcodegen generate` 重新生成项目——脚本会自动读取 `.dev-team` 并注入
+2. `cd ios && ./generate.sh` 生成项目（第一次跑不需要 `.dev-team` 也没关系），打开 `ios/GleanIOS.xcodeproj`，选中 `GleanIOS` target → **Signing & Capabilities**，勾选 "Automatically manage signing"，Team 选刚登录的账号——选好后面板上会显示一串 10 位的 Team ID
+3. 把这串 Team ID 写进 `ios/.dev-team`（gitignored，一次性操作，内容就是那串 ID，别的什么都不用写），之后用 `./generate.sh` 重新生成一次项目，把 Team ID 固化到 `project.yml` 里的 `${GLEAN_DEV_TEAM}` 占位符（Team ID 不提交进公开仓库，脚本会自动读取 `.dev-team` 并注入）
 4. iPhone：设置 → 隐私与安全性 → **开发者模式**，打开后重启一次
 5. 用数据线连接 Mac，若手机弹出"信任这台电脑"，点信任
 6. 在 Xcode 里选中你的设备作为运行目标，点 Run（或用 `xcodebuild -destination 'platform=iOS,id=<设备 UDID>' -allowProvisioningUpdates` 编译后 `xcrun devicectl device install app` 安装）
@@ -96,16 +96,20 @@ npm run tauri build
 
 **依赖：** Xcode 15+、iOS 17 Simulator
 
+`GleanIOS.xcodeproj` 不提交进仓库（完全由 `project.yml` 生成），clone 后第一步要先生成它：
+
 ```bash
+# 首次 clone 后，以及每次修改 project.yml 后都要跑一次
+cd ios && ./generate.sh
+
 # 在 Xcode 中打开
 open ios/GleanIOS.xcodeproj
 
 # 运行 MdxKit 单元测试
 cd ios/MdxKit && swift test
-
-# 重新生成 Xcode 项目（修改 project.yml 后）；真机签名需要 ios/.dev-team，见下方「iOS 真机安装」
-cd ios && ./generate.sh
 ```
+
+真机签名需要 `ios/.dev-team`，见下方「iOS 真机安装」。
 
 ---
 

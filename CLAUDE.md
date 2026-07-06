@@ -30,6 +30,9 @@ Rust compile errors surface in the terminal running `npm run tauri dev`. There a
 
 ### iOS app (`ios/`)
 
+`GleanIOS.xcodeproj` is 100% generated from `project.yml` and is not committed (gitignored) —
+run `./generate.sh` once after cloning before opening it.
+
 ```bash
 # Run MdxKit unit tests
 cd ios/MdxKit && swift test
