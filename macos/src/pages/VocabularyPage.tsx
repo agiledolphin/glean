@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Trash2, Star, Plus, FileDown, FileUp, NotebookPen, ChevronDown, Check } from "lucide-react";
+import { Trash2, Star, Plus, FileDown, FileUp, NotebookPen, ChevronDown, Check, Tag as TagIcon } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { useAppStore } from "@/store";
@@ -13,10 +13,13 @@ import { DictResultPanel } from "@/components/DictResultPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import type { VocabularyItem } from "@/types";
+import type { VocabularyItem, Tag } from "@/types";
 
 const PAGE_SIZE = 300;
+const RECENT_TAGS_KEY = "glean:recentTagIds";
+const MAX_BAR_TAGS = 5;
 
 type TagChoice = number | "none" | "new";
 
@@ -40,6 +43,16 @@ export function VocabularyPage() {
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editingTagId, setEditingTagId] = useState<number | null>(null);
   const [editingTagName, setEditingTagName] = useState("");
+  const [showTagMenu, setShowTagMenu] = useState(false);
+  const [tagSearch, setTagSearch] = useState("");
+  const [recentTagIds, setRecentTagIds] = useState<number[]>(() => {
+    try {
+      const raw = localStorage.getItem(RECENT_TAGS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Note editor state
   const [noteExpanded, setNoteExpanded] = useState(false);
@@ -111,6 +124,20 @@ export function VocabularyPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Drop recent-tag ids that no longer exist (e.g. tag was deleted). Skip while
+  // tags haven't loaded yet (empty array on first render) — otherwise this would
+  // mistake "not loaded yet" for "all tags were deleted" and wipe the saved list.
+  useEffect(() => {
+    if (tags.length === 0) return;
+    const validIds = new Set(tags.map(t => t.id));
+    setRecentTagIds(prev => {
+      const filtered = prev.filter(id => validIds.has(id));
+      if (filtered.length === prev.length) return prev;
+      localStorage.setItem(RECENT_TAGS_KEY, JSON.stringify(filtered));
+      return filtered;
+    });
+  }, [tags]);
+
   // Sync note text when selected item changes; intentionally exclude note to avoid re-sync while editing
   useEffect(() => {
     setNoteText(selectedItem?.note ?? "");
@@ -144,6 +171,39 @@ export function VocabularyPage() {
   const reloadTags = async () => {
     setTags(await listTags());
   };
+
+  // Selecting a tag (from the bar or the "更多标签" menu) bumps it to the front
+  // of the recent list, so frequently-used tags stay reachable without scrolling.
+  const selectTag = (id: number | null) => {
+    setSelectedTagId(id);
+    setShowTagMenu(false);
+    if (id === null) return;
+    setRecentTagIds(prev => {
+      const next = [id, ...prev.filter(t => t !== id)].slice(0, MAX_BAR_TAGS);
+      localStorage.setItem(RECENT_TAGS_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const defaultTag = tags.find(t => t.is_default);
+  const barTags: Tag[] = (() => {
+    const result: Tag[] = [];
+    const seen = new Set<number>();
+    if (defaultTag) { result.push(defaultTag); seen.add(defaultTag.id); }
+    for (const id of recentTagIds) {
+      if (seen.has(id) || result.length >= MAX_BAR_TAGS) continue;
+      const tag = tags.find(t => t.id === id);
+      if (tag) { result.push(tag); seen.add(tag.id); }
+    }
+    if (result.length === 0) {
+      for (const tag of tags) {
+        if (result.length >= MAX_BAR_TAGS) break;
+        result.push(tag);
+      }
+    }
+    return result;
+  })();
+  const filteredTags = tags.filter(t => t.name.toLowerCase().includes(tagSearch.trim().toLowerCase()));
 
   const handleAddTag = async () => {
     if (!newTagName.trim()) return;
@@ -271,100 +331,145 @@ export function VocabularyPage() {
           <span className="text-[11px] text-muted-foreground tabular-nums">{totalCount}</span>
         </div>
 
-        {/* Scrollable chip area */}
+        {/* Default + recently-used chips (never contains the full tag list, so it never needs to scroll far) */}
         <div className="relative min-w-0">
           <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
           <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-            {tags.map((tag) => {
+            {barTags.map((tag) => {
               const active = selectedTagId === tag.id;
               return (
-                <div key={tag.id} className="relative inline-flex items-center shrink-0 tag-chip-wrapper">
-                  {editingTagId === tag.id ? (
-                    <input
-                      autoFocus
-                      value={editingTagName}
-                      onChange={(e) => setEditingTagName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleRenameTag(tag.id);
-                        if (e.key === "Escape") setEditingTagId(null);
-                      }}
-                      onBlur={() => handleRenameTag(tag.id)}
-                      className="px-2 py-0.5 rounded-full text-xs font-medium outline-none w-24"
+                <Tooltip key={tag.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => selectTag(tag.id)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors shrink-0"
                       style={{
-                        backgroundColor: tag.color + "22",
+                        backgroundColor: active ? tag.color + "44" : tag.color + "22",
                         color: tag.color,
-                        border: `1px solid ${tag.color}cc`,
+                        border: `1px solid ${tag.color}${active ? "cc" : tag.is_default ? "aa" : "88"}`,
                       }}
-                    />
-                  ) : (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={() => setSelectedTagId(tag.id)}
-                          onDoubleClick={(e) => {
-                            e.stopPropagation();
-                            setEditingTagId(tag.id);
-                            setEditingTagName(tag.name);
-                          }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors"
-                          style={{
-                            backgroundColor: active ? tag.color + "44" : tag.color + "22",
-                            color: tag.color,
-                            border: `1px solid ${tag.color}${active ? "cc" : tag.is_default ? "aa" : "88"}`,
-                          }}
-                        >
-                          {tag.is_default && <Star size={8} fill="currentColor" className="opacity-70 shrink-0" />}
-                          <span className="max-w-[100px] truncate">{tag.name}</span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">{tag.name}</TooltipContent>
-                    </Tooltip>
-                  )}
-
-                  <div className={cn("tag-chip-actions items-center ml-0.5", pendingDeleteId === tag.id && "tag-chip-actions-pinned")}>
-                    <button
-                      onClick={() => handleSetDefaultTag(tag.id, tag.is_default)}
-                      className={cn("p-0.5 rounded transition-colors", tag.is_default ? "text-primary hover:text-primary/70" : "text-muted-foreground hover:text-primary")}
-                      title={tag.is_default ? "取消默认" : "设为默认"}
                     >
-                      <Star size={10} fill={tag.is_default ? "currentColor" : "none"} />
+                      {tag.is_default && <Star size={8} fill="currentColor" className="opacity-70 shrink-0" />}
+                      <span className="max-w-[100px] truncate">{tag.name}</span>
                     </button>
-                    <button
-                      onClick={() => handleDeleteTag(tag.id)}
-                      className={cn("p-0.5 rounded transition-colors", pendingDeleteId === tag.id ? "text-destructive" : "text-muted-foreground hover:text-destructive")}
-                      title={pendingDeleteId === tag.id ? "再次点击确认删除" : "删除标签"}
-                    >
-                      <Trash2 size={10} />
-                    </button>
-                  </div>
-                </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">{tag.name}</TooltipContent>
+                </Tooltip>
               );
             })}
-
-            {addingTag ? (
-              <Input
-                autoFocus
-                value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleAddTag(); if (e.key === "Escape") setAddingTag(false); }}
-                onBlur={() => { if (!newTagName.trim()) setAddingTag(false); }}
-                placeholder="标签名..."
-                className="h-6 text-xs w-24 px-2 shrink-0"
-              />
-            ) : (
-              <button
-                onClick={() => setAddingTag(true)}
-                className="inline-flex items-center px-2 py-1 rounded-full text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
-                title="新建标签"
-              >
-                <Plus size={11} />
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Action buttons */}
+        {/* Action buttons — fixed, never scrolls away */}
         <div className="flex items-center px-2 gap-0.5 border-l border-border">
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs h-7 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowTagMenu(v => !v)}
+            >
+              <TagIcon size={12} />
+              标签
+              {tags.length > 0 && <span className="text-[10px] tabular-nums opacity-70">{tags.length}</span>}
+            </Button>
+
+            {showTagMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowTagMenu(false)} />
+                <div className="absolute right-0 top-full mt-1 bg-background border border-border rounded-lg shadow-md z-50 w-64 flex flex-col max-h-96">
+                  <div className="p-2 border-b border-border shrink-0">
+                    <Input
+                      autoFocus
+                      value={tagSearch}
+                      onChange={(e) => setTagSearch(e.target.value)}
+                      placeholder="搜索标签..."
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                  <div className="flex-1 overflow-y-auto py-1">
+                    {filteredTags.length === 0 ? (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">没有匹配的标签</p>
+                    ) : filteredTags.map((tag) => (
+                      <div key={tag.id} className="group flex items-center gap-1 px-2 py-1 hover:bg-accent transition-colors">
+                        {editingTagId === tag.id ? (
+                          <input
+                            autoFocus
+                            value={editingTagName}
+                            onChange={(e) => setEditingTagName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleRenameTag(tag.id);
+                              if (e.key === "Escape") setEditingTagId(null);
+                            }}
+                            onBlur={() => handleRenameTag(tag.id)}
+                            className="flex-1 min-w-0 px-1.5 py-0.5 rounded text-xs outline-none border border-border"
+                          />
+                        ) : (
+                          <button
+                            onClick={() => selectTag(tag.id)}
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              setEditingTagId(tag.id);
+                              setEditingTagName(tag.name);
+                            }}
+                            className="flex-1 flex items-center gap-2 min-w-0 px-1 py-0.5 text-left rounded"
+                          >
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
+                            <span
+                              className="flex-1 truncate text-xs"
+                              style={selectedTagId === tag.id ? { color: tag.color, fontWeight: 500 } : undefined}
+                            >
+                              {tag.name}
+                            </span>
+                          </button>
+                        )}
+                        <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleSetDefaultTag(tag.id, tag.is_default)}
+                            className={cn("p-0.5 rounded transition-colors", tag.is_default ? "text-primary hover:text-primary/70" : "text-muted-foreground hover:text-primary")}
+                            title={tag.is_default ? "取消默认" : "设为默认"}
+                          >
+                            <Star size={11} fill={tag.is_default ? "currentColor" : "none"} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTag(tag.id)}
+                            className={cn("p-0.5 rounded transition-colors", pendingDeleteId === tag.id ? "text-destructive" : "text-muted-foreground hover:text-destructive")}
+                            title={pendingDeleteId === tag.id ? "再次点击确认删除" : "删除标签"}
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="p-2 border-t border-border shrink-0">
+                    {addingTag ? (
+                      <Input
+                        autoFocus
+                        value={newTagName}
+                        onChange={(e) => setNewTagName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") handleAddTag(); if (e.key === "Escape") setAddingTag(false); }}
+                        onBlur={() => { if (!newTagName.trim()) setAddingTag(false); }}
+                        placeholder="标签名..."
+                        className="h-7 text-xs"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => setAddingTag(true)}
+                        className="w-full flex items-center justify-center gap-1 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        <Plus size={12} />
+                        新建标签
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <Separator orientation="vertical" className="h-4 mx-1" />
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

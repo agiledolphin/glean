@@ -109,6 +109,15 @@ fn migrate_schema(conn: &Connection) -> Result<()> {
             key   TEXT PRIMARY KEY,
             value TEXT NOT NULL
         );
+
+        -- AI explanations are saved explicitly via a Save button in the UI,
+        -- not cached automatically on every generation.
+        CREATE TABLE IF NOT EXISTS ai_explanations (
+            word       TEXT PRIMARY KEY,
+            html       TEXT NOT NULL,
+            model      TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
     ")?;
 
     Ok(())

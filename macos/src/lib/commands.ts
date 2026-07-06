@@ -33,6 +33,12 @@ export const lookupOnline = (word: string) =>
 export const askAi = (word: string) =>
   invoke<string>("ask_ai", { word });
 
+export const getAiExplanation = (word: string) =>
+  invoke<string | null>("get_ai_explanation", { word });
+
+export const saveAiExplanation = (word: string, html: string) =>
+  invoke<void>("save_ai_explanation", { word, html });
+
 export const getSetting = (key: string) =>
   invoke<string | null>("get_setting", { key });
 

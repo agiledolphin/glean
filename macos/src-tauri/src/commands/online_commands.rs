@@ -188,6 +188,28 @@ pub async fn ask_ai(word: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub async fn get_ai_explanation(word: String) -> Result<Option<String>, String> {
+    let db = DB.get().unwrap().lock().unwrap();
+    let html: Option<String> = db.query_row(
+        "SELECT html FROM ai_explanations WHERE word=?1",
+        params![word],
+        |row| row.get(0),
+    ).ok();
+    Ok(html)
+}
+
+#[tauri::command]
+pub async fn save_ai_explanation(word: String, html: String) -> Result<(), String> {
+    let db = DB.get().unwrap().lock().unwrap();
+    db.execute(
+        "INSERT INTO ai_explanations (word, html, updated_at) VALUES (?1, ?2, CURRENT_TIMESTAMP)
+         ON CONFLICT(word) DO UPDATE SET html=excluded.html, updated_at=CURRENT_TIMESTAMP",
+        params![word, html],
+    ).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn lookup_online(word: String) -> Result<Option<DictResult>, String> {
     let url = format!(
         "https://api.dictionaryapi.dev/api/v2/entries/en/{}",

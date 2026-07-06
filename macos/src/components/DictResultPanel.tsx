@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { open } from "@tauri-apps/plugin-shell";
 import appIcon from "@/assets/app-icon.png";
-import { BookmarkPlus, BookmarkCheck, Volume2, Loader2, ChevronDown, ChevronRight, Tag as TagIcon, Sparkles } from "lucide-react";
+import { BookmarkPlus, BookmarkCheck, Volume2, Loader2, ChevronDown, ChevronRight, Tag as TagIcon, Sparkles, Save, Check } from "lucide-react";
 import { useAppStore } from "@/store";
-import { addToVocabulary, removeFromVocabulary, isInVocabulary, getVocabularyTags, playPronunciation, playMddAudio, listTags, addTagToWord, removeTagFromWord, askAi } from "@/lib/commands";
+import { addToVocabulary, removeFromVocabulary, isInVocabulary, getVocabularyTags, playPronunciation, playMddAudio, listTags, addTagToWord, removeTagFromWord, askAi, getAiExplanation, saveAiExplanation } from "@/lib/commands";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -23,6 +23,8 @@ export function DictResultPanel() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiCollapsed, setAiCollapsed] = useState(false);
+  const [aiSaved, setAiSaved] = useState(false);
+  const [aiSaving, setAiSaving] = useState(false);
   const aiRequestWordRef = useRef<string | null>(null);
 
   // Load tags once on mount
@@ -35,7 +37,8 @@ export function DictResultPanel() {
     return () => { aiRequestWordRef.current = null; };
   }, []);
 
-  // Reset state when the word changes; also invalidates any in-flight AI request
+  // Reset state when the word changes; also invalidates any in-flight AI request.
+  // If a saved explanation exists for the new word, load it straight in.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     aiRequestWordRef.current = null;
@@ -44,6 +47,18 @@ export function DictResultPanel() {
     setAiError(null);
     setAiLoading(false);
     setAiCollapsed(false);
+    setAiSaved(false);
+
+    if (!selectedWord) return;
+    const thisWord = selectedWord;
+    aiRequestWordRef.current = thisWord;
+    getAiExplanation(thisWord).then(html => {
+      if (aiRequestWordRef.current !== thisWord) return;
+      if (html) {
+        setAiHtml(html);
+        setAiSaved(true);
+      }
+    }).catch(() => {});
   }, [selectedWord]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -54,6 +69,7 @@ export function DictResultPanel() {
     setAiLoading(true);
     setAiError(null);
     setAiHtml(null);
+    setAiSaved(false);
     setAiCollapsed(false);
     try {
       const html = await askAi(thisWord);
@@ -64,6 +80,19 @@ export function DictResultPanel() {
       setAiError(e instanceof Error ? e.message : String(e));
     } finally {
       if (aiRequestWordRef.current === thisWord) setAiLoading(false);
+    }
+  };
+
+  const handleSaveAi = async () => {
+    if (!selectedWord || !aiHtml || aiSaving) return;
+    setAiSaving(true);
+    try {
+      await saveAiExplanation(selectedWord, aiHtml);
+      setAiSaved(true);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAiSaving(false);
     }
   };
 
@@ -327,6 +356,24 @@ export function DictResultPanel() {
                   >
                     重新生成
                   </button>
+                )}
+                {aiHtml && !aiLoading && (
+                  aiSaved ? (
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0 ml-2" title="已保存，下次查询会直接显示">
+                      <Check size={12} />
+                      已保存
+                    </span>
+                  ) : (
+                    <button
+                      onClick={handleSaveAi}
+                      disabled={aiSaving}
+                      className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors shrink-0 ml-2 disabled:opacity-50"
+                      title="保存后下次查询会直接显示，不用重新生成"
+                    >
+                      {aiSaving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+                      保存
+                    </button>
+                  )
                 )}
               </div>
               {aiError && (
