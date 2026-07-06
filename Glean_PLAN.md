@@ -363,6 +363,7 @@ CREATE TABLE dictionaries (
 - [x] Markdown 导出重构：平铺格式 `word  #tag1 #tag2`，原生 Save 对话框选路径/文件名
 - [x] 收藏/发音/标签按钮 mousedown 时阻止抢占搜索框焦点，收藏后可直接继续打字查词
 - [x] 词典释义内部引用链接可点击跳转查词（此前无条件 preventDefault，点击无反应）；http(s) 链接改为系统浏览器打开
+- [x] 修复词典释义内 "+ More About"/"Word Origin" 展开面板无法点开（牛津/朗文等词典自带 `.js`，靠内联 onclick 驱动，此前两端都没加载这个文件；MdxDict/MdxKit 新增 `js` 字段，macOS 侧作为真实 `<script>` 元素 append 到 `document.head`（Shadow DOM innerHTML 不会执行内嵌 `<script>`），iOS 侧直接拼进 WKWebView 的 loadHTMLString 内容里；macOS + iOS 真机均已验证）
 - [ ] 设置页完善（发音偏好、主题等）
 
 ### Phase 5 — 背单词与进阶功能（进行中）
@@ -431,7 +432,8 @@ CREATE TABLE dictionaries (
 - [ ] SM-2 复习会话（与 macOS 版逻辑对齐）
 - [ ] **多设备同步**（vocabulary + tags + vocabulary_tags；query_history/word_stats/review_cards 明确不做）：**CloudKit 方案已否决**——2026-07-06 实测：给 `project.yml` 加 `entitlements`（`com.apple.developer.icloud-container-identifiers` + `icloud-services: CloudKit`）后，免费 Apple ID（Personal Team）在 `xcodebuild -allowProvisioningUpdates` 时直接报错 `Personal development teams... do not support the iCloud capability`——**iCloud/CloudKit 硬性要求付费 Apple Developer Program（$99/年）**，无法绕过。用户选择暂不付费，同步方案搁置；如果以后要重启，要么补付费账号走原计划（macOS 端原生 Swift CLI 帮手工具 + iOS 原生 CloudKit，见 memory），要么换不依赖 Apple 账号等级的方案（自建同步服务/WebDAV/第三方 BaaS）
 - [ ] 深色模式适配
-- [ ] App 图标 / 启动页
+- [x] App 图标（复用 macOS Logo，1024x1024 单尺寸 universal 格式）
+- [ ] 启动页
 - [ ] 字体体系（匹配 macOS 版 Flexoki 风格）
 
 ---
