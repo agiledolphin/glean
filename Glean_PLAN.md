@@ -429,7 +429,7 @@ CREATE TABLE dictionaries (
 ### iOS Phase 4 — 背单词、同步与完善（待开发）
 
 - [ ] SM-2 复习会话（与 macOS 版逻辑对齐）
-- [ ] **CloudKit 同步**（生词本 + 标签 + 查询历史）：讨论阶段，未开始实现。**关键限制：CloudKit 无官方 Rust SDK**，macOS 端（Tauri + Rust）无法直接用原生框架，需通过 CloudKit Web Services（HTTP REST API，用现有 `reqwest` 依赖实现）；iOS 端用原生 CloudKit。前提：两端登录同一 Apple ID，免费账号即可，但需在两个 target 加 iCloud + CloudKit 能力并指向同一 container。建议先只同步 vocabulary + tags，query_history 数据量大意义相对小可后置
+- [ ] **多设备同步**（vocabulary + tags + vocabulary_tags；query_history/word_stats/review_cards 明确不做）：**CloudKit 方案已否决**——2026-07-06 实测：给 `project.yml` 加 `entitlements`（`com.apple.developer.icloud-container-identifiers` + `icloud-services: CloudKit`）后，免费 Apple ID（Personal Team）在 `xcodebuild -allowProvisioningUpdates` 时直接报错 `Personal development teams... do not support the iCloud capability`——**iCloud/CloudKit 硬性要求付费 Apple Developer Program（$99/年）**，无法绕过。用户选择暂不付费，同步方案搁置；如果以后要重启，要么补付费账号走原计划（macOS 端原生 Swift CLI 帮手工具 + iOS 原生 CloudKit，见 memory），要么换不依赖 Apple 账号等级的方案（自建同步服务/WebDAV/第三方 BaaS）
 - [ ] 深色模式适配
 - [ ] App 图标 / 启动页
 - [ ] 字体体系（匹配 macOS 版 Flexoki 风格）
