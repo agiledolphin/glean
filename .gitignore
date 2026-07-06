@@ -17,6 +17,7 @@ ios/build/
 ios/GleanIOS.xcodeproj/xcuserdata/
 ios/GleanIOS.xcodeproj/project.xcworkspace/xcuserdata/
 ios/MdxKit/.swiftpm/xcode/xcuserdata/
+ios/.dev-team
 
 # Misc
 .DS_Store

@@ -34,8 +34,11 @@ Rust compile errors surface in the terminal running `npm run tauri dev`. There a
 # Run MdxKit unit tests
 cd ios/MdxKit && swift test
 
-# Regenerate Xcode project from project.yml
-cd ios && xcodegen generate
+# Regenerate Xcode project from project.yml (reads DEVELOPMENT_TEAM from
+# gitignored ios/.dev-team if present; plain `xcodegen generate` also works
+# but leaves DEVELOPMENT_TEAM as a literal "${GLEAN_DEV_TEAM}" placeholder,
+# fine for Simulator, breaks real-device signing)
+cd ios && ./generate.sh
 
 # Open in Xcode
 open ios/GleanIOS.xcodeproj

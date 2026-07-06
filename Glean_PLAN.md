@@ -417,14 +417,14 @@ CREATE TABLE dictionaries (
 - [x] 修复 GRDB Record camelCase/snake_case 字段映射缺失导致的静默写入失败（加 `databaseColumnDecodingStrategy`/`databaseColumnEncodingStrategy`）
 - [x] 词典文件导入：`DictManagerView` + `.fileImporter(allowedContentTypes: [.folder])`，选目录后 flat copy 到 `Documents/dicts/<id>/`（`id` = SHA256(mdx stem) 前 8 字节 hex，与 macOS 端算法一致，跨端导入同一词典会落到同一目录）
 - [x] Simulator 下屏蔽删除词典（`DictManager.deletionAllowed`）——Simulator 的 `dictsDirectory` 直接指向 Mac 真实的 `~/.glean/dicts/`，与 macOS 版共享，误删会破坏 Mac 端文件；仅真机（沙盒内 `Documents/dicts/`）允许删除
-- [x] 生词标签关联（`TagPickerView` 新文件，DictDetailView 工具栏 🏷️ 图标）：新建/勾选/取消/左滑删除标签，默认标签（星标）收藏新词时自动关联，逻辑对齐 macOS `DictResultPanel.tsx` + `vocab_commands.rs`（Simulator 验证通过，**未 commit**）
+- [x] 生词标签关联（`TagPickerView` 新文件，DictDetailView 工具栏 🏷️ 图标）：新建/勾选/取消/左滑删除标签，默认标签（星标）收藏新词时自动关联，逻辑对齐 macOS `DictResultPanel.tsx` + `vocab_commands.rs`（真机验证通过，已 commit）
 
 ### 真机部署（2026-07-03，验证通过）
 
 - [x] 免费 Apple ID（Personal Team）签名安装到真机：`project.yml` 加 `DEVELOPMENT_TEAM`/`CODE_SIGN_STYLE: Automatic`，`xcodebuild -destination 'platform=iOS,id=<udid>' -allowProvisioningUpdates` 编译，`xcrun devicectl device install/launch app` 安装启动
 - [x] 真机首次启动前需在「设置 → 通用 → VPN与设备管理」手动信任开发者证书，否则报 "invalid code signature...profile has not been explicitly trusted"
 - 真机上 `Documents/dicts/` 是独立沙盒，不与 Mac 共享，需通过 v0.7.0 的"词典导入"功能手动导入词典
-- **仓库是 public 的，`DEVELOPMENT_TEAM` 不能写死提交**：`project.yml` 里用 `DEVELOPMENT_TEAM: "${GLEAN_DEV_TEAM}"` 环境变量占位符（xcodegen 原生支持 `${VAR}` 替换，未设置时保留字面量，不影响 Simulator 构建，只影响真机签名）。真机开发前需要 `export GLEAN_DEV_TEAM=<Team ID>` 再 `xcodegen generate`；注意每次 regenerate 都会用当前 shell 里的值重新写入 `project.pbxproj`，忘记 export 会导致签名回退成占位符
+- **仓库是 public 的，`DEVELOPMENT_TEAM` 不能写死提交**：`project.yml` 里用 `DEVELOPMENT_TEAM: "${GLEAN_DEV_TEAM}"` 环境变量占位符（xcodegen 原生支持 `${VAR}` 替换，未设置时保留字面量，不影响 Simulator 构建，只影响真机签名）。真实 Team ID 放在 `ios/.dev-team`（gitignored，一行纯文本），`ios/generate.sh` 包装了 `xcodegen generate`：存在就读取并 export 成 `GLEAN_DEV_TEAM` 再生成，不存在也能正常跑（只是签名回退成占位符）。日常应该用 `./generate.sh` 而不是裸的 `xcodegen generate`
 
 ### iOS Phase 4 — 背单词、同步与完善（待开发）
 
