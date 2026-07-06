@@ -18,6 +18,7 @@ export interface DictResult {
   word: string;
   definition: string;
   css?: string;
+  js?: string;
 }
 
 export interface VocabularyItem {

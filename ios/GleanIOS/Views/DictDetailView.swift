@@ -317,11 +317,17 @@ final class DictPageVC: UIViewController, WKNavigationDelegate {
             li:empty { display: none; }
         """
         let dictStyle = result.css.map { "<style>\($0)</style>" } ?? ""
+        // Some dicts (e.g. Oxford, Longman) ship a companion script driving
+        // "+ More About" / "Word Origin" expand-collapse widgets via inline
+        // onclick handlers. Unlike Shadow DOM innerHTML on macOS, WKWebView's
+        // loadHTMLString executes real <script> tags normally, so this just works.
+        let dictScript = result.js.map { "<script>\($0)</script>" } ?? ""
         let html = """
         <!DOCTYPE html><html><head>
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <style>\(baseCSS)</style>
         \(dictStyle)
+        \(dictScript)
         </head><body>\(result.html)</body></html>
         """
         let baseURL = result.dictDirPath.map { URL(fileURLWithPath: $0) }

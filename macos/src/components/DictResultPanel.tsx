@@ -364,7 +364,7 @@ export function DictResultPanel() {
                   </button>
 
                   {!isCollapsed && (
-                    <DictContent html={result.definition} css={result.css} dictId={result.dict_id} />
+                    <DictContent html={result.definition} css={result.css} js={result.js} dictId={result.dict_id} />
                   )}
 
                   {idx < dictResults.length - 1 && (
@@ -418,10 +418,29 @@ function extractEntryWord(href: string): string {
   return w.trim();
 }
 
-function DictContent({ html, css, dictId }: { html: string; css?: string; dictId: string }) {
+// Dict-provided interactive widgets (e.g. Oxford's "+ More About" panels) rely on
+// inline onclick="someGlobalFn(this)" attributes. Shadow DOM only isolates CSS/DOM
+// queries, not JS scope — but `shadow.innerHTML = ...` never executes embedded
+// <script> tags at all. So each dict's companion .js is injected once as a real
+// <script> element on the document, making its functions reachable from onclick
+// handlers on elements living inside any Shadow DOM.
+const injectedDictScripts = new Set<string>();
+
+function injectDictScript(dictId: string, js: string) {
+  if (injectedDictScripts.has(dictId)) return;
+  injectedDictScripts.add(dictId);
+  const script = document.createElement("script");
+  script.textContent = js;
+  script.dataset.dictScript = dictId;
+  document.head.appendChild(script);
+}
+
+function DictContent({ html, css, js, dictId }: { html: string; css?: string; js?: string; dictId: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (js) injectDictScript(dictId, js);
+
     const host = hostRef.current;
     if (!host) return;
     const shadow = host.shadowRoot ?? host.attachShadow({ mode: "open" });
@@ -450,7 +469,7 @@ function DictContent({ html, css, dictId }: { html: string; css?: string; dictId
 
     shadow.addEventListener("click", handleClick);
     return () => shadow.removeEventListener("click", handleClick);
-  }, [html, css, dictId]);
+  }, [html, css, js, dictId]);
 
   // transform creates a new containing block for position:fixed descendants,
   // preventing them from escaping the scroll container.

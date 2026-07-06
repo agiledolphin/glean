@@ -220,5 +220,6 @@ pub async fn lookup_online(word: String) -> Result<Option<DictResult>, String> {
         word: word.clone(),
         definition: html,
         css: None,
+        js: None,
     }))
 }

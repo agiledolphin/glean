@@ -164,6 +164,7 @@ final class DictManager: @unchecked Sendable {
         let title: String
         let html: String
         let css: String?          // dict-specific stylesheet, if found
+        let js: String?           // dict-specific companion script, if found
         let dictDirPath: String?  // base URL for relative resource paths
     }
 
@@ -171,7 +172,7 @@ final class DictManager: @unchecked Sendable {
         dicts.compactMap { dict in
             guard let html = try? dict.lookup(word) else { return nil }
             let dirPath = (dict.filePath as NSString).deletingLastPathComponent
-            return DictResult(title: dict.meta.title, html: html, css: dict.css, dictDirPath: dirPath)
+            return DictResult(title: dict.meta.title, html: html, css: dict.css, js: dict.js, dictDirPath: dirPath)
         }
     }
 

@@ -31,6 +31,7 @@ public final class MdxDict: Sendable {
     public let meta: DictMeta
     public let filePath: String
     public let css: String?            // dict stylesheet (from .css file or MDD)
+    public let js: String?             // dict companion script (from .js file or MDD)
     private let index: [String: UInt64]      // lowercase key → global_offset
     private let sortedKeys: [String]          // sorted for prefix search
     private let recordBlockOffset: UInt64
@@ -62,6 +63,23 @@ public final class MdxDict: Sendable {
                 css = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1)
             } else {
                 css = nil
+            }
+        }
+
+        // JS: some dicts (e.g. Oxford, Longman) ship a companion script driving
+        // "+ More About" / "Word Origin" style expand-collapse widgets.
+        if let jsFile = (try? FileManager.default.contentsOfDirectory(atPath: dir))?
+                .first(where: { $0.hasSuffix(".js") }) {
+            js = try? String(contentsOfFile: (dir as NSString).appendingPathComponent(jsFile), encoding: .utf8)
+        } else {
+            let mddPath = (path as NSString).deletingPathExtension.appending(".mdd")
+            if FileManager.default.fileExists(atPath: mddPath),
+               let mdd = try? MddDict(path: mddPath),
+               let jsKey = mdd.firstKey(endingWith: ".js"),
+               let data = try? mdd.lookup(key: jsKey) {
+                js = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1)
+            } else {
+                js = nil
             }
         }
     }

@@ -31,6 +31,7 @@ pub struct DictResult {
     pub word: String,
     pub definition: String,
     pub css: Option<String>,
+    pub js: Option<String>,
 }
 
 #[tauri::command]
@@ -533,6 +534,7 @@ pub async fn lookup_word(word: String) -> Result<Vec<DictResult>, String> {
                     word: word.clone(),
                     definition: resolved,
                     css: dict.css.clone(),
+                    js: dict.js.clone(),
                 });
             }
         }
