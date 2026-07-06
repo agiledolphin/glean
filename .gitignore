@@ -14,10 +14,13 @@ macos/src-tauri/src/dict/
 # iOS app
 ios/MdxKit/.build/
 ios/build/
-ios/GleanIOS.xcodeproj/xcuserdata/
-ios/GleanIOS.xcodeproj/project.xcworkspace/xcuserdata/
 ios/MdxKit/.swiftpm/xcode/xcuserdata/
 ios/.dev-team
+
+# GleanIOS.xcodeproj is 100% generated from project.yml via xcodegen (see
+# ios/generate.sh) — not committed, so DEVELOPMENT_TEAM never has to be
+# scrubbed before a commit. Run `cd ios && ./generate.sh` after cloning.
+ios/GleanIOS.xcodeproj/
 
 # Misc
 .DS_Store
