@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { open } from "@tauri-apps/plugin-shell";
 import appIcon from "@/assets/app-icon.png";
-import { BookmarkPlus, BookmarkCheck, Volume2, Loader2, ChevronDown, ChevronRight, Tag as TagIcon, Sparkles, Save, Check } from "lucide-react";
+import { BookmarkPlus, BookmarkCheck, Volume2, Loader2, ChevronDown, ChevronRight, Tag as TagIcon, Sparkles, Save, Check, Plus, Star, Pencil } from "lucide-react";
 import { useAppStore } from "@/store";
-import { addToVocabulary, removeFromVocabulary, isInVocabulary, getVocabularyTags, playPronunciation, playMddAudio, listTags, addTagToWord, removeTagFromWord, askAi, getAiExplanation, saveAiExplanation } from "@/lib/commands";
+import { addToVocabulary, removeFromVocabulary, isInVocabulary, getVocabularyTags, playPronunciation, playMddAudio, listTags, createTag, renameTag, setDefaultTag, addTagToWord, removeTagFromWord, askAi, getAiExplanation, saveAiExplanation } from "@/lib/commands";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import type { Tag } from "@/types";
@@ -19,6 +20,11 @@ export function DictResultPanel() {
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [activeTagIds, setActiveTagIds] = useState<Set<number>>(new Set());
   const [showTagPanel, setShowTagPanel] = useState(false);
+  const [tagSearch, setTagSearch] = useState("");
+  const [addingTag, setAddingTag] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [editingTagId, setEditingTagId] = useState<number | null>(null);
+  const [editingTagName, setEditingTagName] = useState("");
   const [aiHtml, setAiHtml] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -154,6 +160,58 @@ export function DictResultPanel() {
     setActiveTagIds(next);
   };
 
+  const closeTagPanel = () => {
+    setShowTagPanel(false);
+    setTagSearch("");
+    setAddingTag(false);
+    setNewTagName("");
+  };
+
+  const toggleTagPanel = () => {
+    if (showTagPanel) closeTagPanel();
+    else setShowTagPanel(true);
+  };
+
+  const handleCreateTag = async () => {
+    const name = newTagName.trim();
+    if (!name) return;
+    const colors = ["#4385be", "#3aa99f", "#8b7ec8", "#879a39", "#da702c"];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    try {
+      const tag = await createTag(name, color);
+      setAllTags(prev => [...prev, tag]);
+      await handleTagToggle(tag.id);
+      setNewTagName("");
+      setAddingTag(false);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRenameTag = async (id: number) => {
+    const name = editingTagName.trim();
+    setEditingTagId(null);
+    if (!name) return;
+    const tag = allTags.find(t => t.id === id);
+    if (tag && name === tag.name) return;
+    try {
+      await renameTag(id, name);
+      setAllTags(prev => prev.map(t => t.id === id ? { ...t, name } : t));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSetDefaultTag = async (id: number, isDefault: boolean) => {
+    try {
+      await setDefaultTag(isDefault ? null : id);
+      const tags = await listTags();
+      setAllTags(tags);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handlePlay = async () => {
     if (!selectedWord) return;
     setPlayingAudio(true);
@@ -199,6 +257,8 @@ export function DictResultPanel() {
   // resumes immediately without needing "/" or a manual click back into it.
   const preventFocusSteal = (e: React.MouseEvent) => e.preventDefault();
 
+  const filteredTags = allTags.filter(t => t.name.toLowerCase().includes(tagSearch.trim().toLowerCase()));
+
   const handlePanelKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
     e.preventDefault();
@@ -241,7 +301,7 @@ export function DictResultPanel() {
                       key={tag.id}
                       className="text-[11px] font-medium px-1.5 py-0.5 rounded-full cursor-pointer select-none"
                       style={{ backgroundColor: tag.color + "33", color: tag.color, border: `1px solid ${tag.color}99` }}
-                      onClick={() => setShowTagPanel(v => !v)}
+                      onClick={toggleTagPanel}
                     >
                       {tag.name}
                     </span>
@@ -249,7 +309,7 @@ export function DictResultPanel() {
                   {overflow > 0 && (
                     <span
                       className="text-[11px] text-muted-foreground cursor-pointer select-none"
-                      onClick={() => setShowTagPanel(v => !v)}
+                      onClick={toggleTagPanel}
                     >
                       +{overflow}
                     </span>
@@ -261,7 +321,7 @@ export function DictResultPanel() {
               variant="ghost"
               size="icon"
               onMouseDown={preventFocusSteal}
-              onClick={() => setShowTagPanel(v => !v)}
+              onClick={toggleTagPanel}
               className={cn("h-7 w-7 shrink-0", activeTagIds.size > 0 ? "text-foreground" : "text-muted-foreground")}
               title="选择标签"
             >
@@ -270,29 +330,94 @@ export function DictResultPanel() {
 
             {showTagPanel && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowTagPanel(false)} />
-                <div className="absolute right-0 top-full mt-1 bg-background border border-border rounded-lg shadow-md py-1 z-50 w-max min-w-[140px] max-w-[220px]">
-                  {allTags.length === 0 ? (
-                    <p className="px-3 py-2 text-xs text-muted-foreground">暂无标签</p>
-                  ) : allTags.map(tag => {
-                    const checked = activeTagIds.has(tag.id);
-                    return (
+                <div className="fixed inset-0 z-40" onClick={closeTagPanel} />
+                <div className="absolute right-0 top-full mt-1 bg-background border border-border rounded-lg shadow-md z-50 w-72 flex flex-col max-h-80">
+                  <div className="p-2 border-b border-border shrink-0">
+                    <Input
+                      autoFocus
+                      value={tagSearch}
+                      onChange={(e) => setTagSearch(e.target.value)}
+                      placeholder="搜索标签..."
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                  <div className="flex-1 overflow-y-auto py-1">
+                    {filteredTags.length === 0 ? (
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
+                        {allTags.length === 0 ? "暂无标签" : "没有匹配的标签"}
+                      </p>
+                    ) : filteredTags.map(tag => {
+                      const checked = activeTagIds.has(tag.id);
+                      return (
+                        <div key={tag.id} className="group flex items-center gap-1 px-2 py-1 hover:bg-accent transition-colors">
+                          {editingTagId === tag.id ? (
+                            <input
+                              autoFocus
+                              value={editingTagName}
+                              onChange={(e) => setEditingTagName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleRenameTag(tag.id);
+                                if (e.key === "Escape") setEditingTagId(null);
+                              }}
+                              onBlur={() => handleRenameTag(tag.id)}
+                              className="flex-1 min-w-0 px-1.5 py-0.5 rounded text-xs outline-none border border-border"
+                            />
+                          ) : (
+                            <button
+                              onClick={() => handleTagToggle(tag.id)}
+                              className="flex-1 flex items-center gap-2 min-w-0 px-1 py-0.5 text-left rounded"
+                            >
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
+                              <span className="flex-1 truncate text-xs" title={tag.name}>{tag.name}</span>
+                              {checked && (
+                                <span className="text-primary text-[10px] font-medium shrink-0">✓</span>
+                              )}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => { setEditingTagId(tag.id); setEditingTagName(tag.name); }}
+                            className="p-0.5 rounded shrink-0 text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
+                            title="重命名"
+                          >
+                            <Pencil size={11} />
+                          </button>
+                          <button
+                            onClick={() => handleSetDefaultTag(tag.id, tag.is_default)}
+                            className={cn(
+                              "p-0.5 rounded shrink-0 transition-colors",
+                              tag.is_default
+                                ? "text-primary opacity-100"
+                                : "text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100"
+                            )}
+                            title={tag.is_default ? "取消默认" : "设为默认"}
+                          >
+                            <Star size={11} fill={tag.is_default ? "currentColor" : "none"} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="p-2 border-t border-border shrink-0">
+                    {addingTag ? (
+                      <Input
+                        autoFocus
+                        value={newTagName}
+                        onChange={(e) => setNewTagName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") handleCreateTag(); if (e.key === "Escape") setAddingTag(false); }}
+                        onBlur={() => { if (!newTagName.trim()) setAddingTag(false); }}
+                        placeholder="标签名..."
+                        className="h-7 text-xs"
+                      />
+                    ) : (
                       <button
-                        key={tag.id}
-                        onClick={() => handleTagToggle(tag.id)}
-                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent transition-colors"
+                        onClick={() => setAddingTag(true)}
+                        className="w-full flex items-center justify-center gap-1 py-1 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                       >
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
-                        <span className="flex-1 text-left truncate">{tag.name}</span>
-                        {tag.is_default && (
-                          <span className={cn("text-[10px]", checked ? "text-muted-foreground/40" : "text-muted-foreground/40")}>默认</span>
-                        )}
-                        {checked && (
-                          <span className="text-primary text-[10px] font-medium ml-1">✓</span>
-                        )}
+                        <Plus size={12} />
+                        新建标签
                       </button>
-                    );
-                  })}
+                    )}
+                  </div>
                 </div>
               </>
             )}

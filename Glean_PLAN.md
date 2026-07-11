@@ -11,7 +11,7 @@
 | 产品名称 | 拾词 / Glean |
 | 目标平台 | macOS ✅、iOS（开发中）、Windows（后续） |
 | 核心用户 | 碎片化记录词汇的外语学习者 |
-| 当前版本 | macOS v0.7.0 / iOS v0.7.1 |
+| 当前版本 | macOS v0.7.1 / iOS v0.7.1 |
 | macOS 技术栈 | Tauri 2.x + Rust + React 19 + TypeScript 6 + Vite 8 |
 | iOS 技术栈 | SwiftUI + GRDB.swift 6.x + MdxKit（Swift Package） |
 | 数据存储 | SQLite（本地，两端 schema 一致）|
@@ -366,6 +366,8 @@ CREATE TABLE dictionaries (
 - [x] 修复词典释义内 "+ More About"/"Word Origin" 展开面板无法点开（牛津/朗文等词典自带 `.js`，靠内联 onclick 驱动，此前两端都没加载这个文件；MdxDict/MdxKit 新增 `js` 字段，macOS 侧作为真实 `<script>` 元素 append 到 `document.head`（Shadow DOM innerHTML 不会执行内嵌 `<script>`），iOS 侧直接拼进 WKWebView 的 loadHTMLString 内容里；macOS + iOS 真机均已验证）
 - [x] 生词本标签筛选条重构：条上只常驻"默认标签 + 最近筛选过的标签"（`localStorage` 记录，最多 5 个），其余标签和新建/重命名/删除/设默认收进右侧固定的"标签"弹层（带搜索），解决标签一多就要滚很远才能点到"+"的问题
 - [x] AI 解释支持手动保存：新增 `ai_explanations` 表，生成后点"保存"才写入（不是每次生成自动缓存），下次查同一个词直接读到缓存显示，不用重新点生成；"重新生成"不受影响，覆盖式保存
+- [x] 查词页收藏左侧的标签弹层补齐生词本弹层已有的能力：搜索 + 滚动、新建标签、重命名、设默认（星标）；两处弹层加宽、hover 显示完整标签名、默认标签星标常显
+- [x] 修复生词本标签弹层"双击改名"失效：单击会先 `selectTag()` 关闭弹层，双击的第二次点击落空——改用悬停可见的编辑图标触发改名
 - [ ] 设置页完善（发音偏好、主题等）
 
 ### Phase 5 — 背单词与进阶功能（进行中）

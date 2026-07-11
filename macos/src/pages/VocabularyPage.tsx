@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Trash2, Star, Plus, FileDown, FileUp, NotebookPen, ChevronDown, Check, Tag as TagIcon } from "lucide-react";
+import { Trash2, Star, Plus, FileDown, FileUp, NotebookPen, ChevronDown, Check, Tag as TagIcon, Pencil } from "lucide-react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { useAppStore } from "@/store";
@@ -377,7 +377,7 @@ export function VocabularyPage() {
             {showTagMenu && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowTagMenu(false)} />
-                <div className="absolute right-0 top-full mt-1 bg-background border border-border rounded-lg shadow-md z-50 w-64 flex flex-col max-h-96">
+                <div className="absolute right-0 top-full mt-1 bg-background border border-border rounded-lg shadow-md z-50 w-72 flex flex-col max-h-96">
                   <div className="p-2 border-b border-border shrink-0">
                     <Input
                       autoFocus
@@ -407,16 +407,12 @@ export function VocabularyPage() {
                         ) : (
                           <button
                             onClick={() => selectTag(tag.id)}
-                            onDoubleClick={(e) => {
-                              e.stopPropagation();
-                              setEditingTagId(tag.id);
-                              setEditingTagName(tag.name);
-                            }}
                             className="flex-1 flex items-center gap-2 min-w-0 px-1 py-0.5 text-left rounded"
                           >
                             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
                             <span
                               className="flex-1 truncate text-xs"
+                              title={tag.name}
                               style={selectedTagId === tag.id ? { color: tag.color, fontWeight: 500 } : undefined}
                             >
                               {tag.name}
@@ -425,11 +421,11 @@ export function VocabularyPage() {
                         )}
                         <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
-                            onClick={() => handleSetDefaultTag(tag.id, tag.is_default)}
-                            className={cn("p-0.5 rounded transition-colors", tag.is_default ? "text-primary hover:text-primary/70" : "text-muted-foreground hover:text-primary")}
-                            title={tag.is_default ? "取消默认" : "设为默认"}
+                            onClick={() => { setEditingTagId(tag.id); setEditingTagName(tag.name); }}
+                            className="p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors"
+                            title="重命名"
                           >
-                            <Star size={11} fill={tag.is_default ? "currentColor" : "none"} />
+                            <Pencil size={11} />
                           </button>
                           <button
                             onClick={() => handleDeleteTag(tag.id)}
@@ -439,6 +435,18 @@ export function VocabularyPage() {
                             <Trash2 size={11} />
                           </button>
                         </div>
+                        <button
+                          onClick={() => handleSetDefaultTag(tag.id, tag.is_default)}
+                          className={cn(
+                            "p-0.5 rounded shrink-0 transition-colors",
+                            tag.is_default
+                              ? "text-primary opacity-100"
+                              : "text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100"
+                          )}
+                          title={tag.is_default ? "取消默认" : "设为默认"}
+                        >
+                          <Star size={11} fill={tag.is_default ? "currentColor" : "none"} />
+                        </button>
                       </div>
                     ))}
                   </div>
