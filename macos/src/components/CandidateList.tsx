@@ -47,6 +47,14 @@ export function CandidateList() {
   } = useAppStore();
 
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Tracks which word the most recent lookupWord() call is for, so a slower
+  // stale response (e.g. from a word the user has since navigated away from)
+  // can't clobber the result for the word currently on screen.
+  const lookupRequestRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => { lookupRequestRef.current = null; };
+  }, []);
 
   useEffect(() => {
     if (highlightedIndex >= 0) {
@@ -65,7 +73,7 @@ export function CandidateList() {
         ? Math.min(highlightedIndex + 1, candidates.length - 1)
         : Math.max(highlightedIndex - 1, 0);
       setHighlightedIndex(next);
-      handleSelect(candidates[next]);
+      setSelectedWord(candidates[next]);
     }
   };
 
@@ -78,23 +86,28 @@ export function CandidateList() {
     itemRefs.current[idx]?.focus();
   };
 
-  const handleSelect = async (word: string) => {
-    setSelectedWord(word);
+  // Single source of truth for performing a lookup — triggered only by the
+  // selectedWord effect below, never called directly from click/key handlers,
+  // so each word change results in exactly one in-flight request.
+  const performLookup = async (word: string) => {
+    lookupRequestRef.current = word;
     setIsSearching(true);
     try {
       const results = await lookupWord(word);
+      if (lookupRequestRef.current !== word) return;
       if (results.length > 0) {
         setDictResults(results);
       } else if (onlineLookupEnabled) {
         const online = await lookupOnline(word);
+        if (lookupRequestRef.current !== word) return;
         setDictResults(online ? [online] : []);
       } else {
         setDictResults([]);
       }
     } catch {
-      setDictResults([]);
+      if (lookupRequestRef.current === word) setDictResults([]);
     } finally {
-      setIsSearching(false);
+      if (lookupRequestRef.current === word) setIsSearching(false);
     }
   };
 
@@ -103,10 +116,12 @@ export function CandidateList() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // Auto-select when selectedWord changes from navbar Enter
+  // Perform the lookup whenever selectedWord changes — from a click, arrow-key
+  // navigation, navbar Enter, or history back/forward. This is the only place
+  // performLookup is called, so switching words never has two lookups racing.
   useEffect(() => {
     if (selectedWord) {
-      handleSelect(selectedWord);
+      performLookup(selectedWord);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedWord]);
@@ -143,7 +158,7 @@ export function CandidateList() {
                   <button
                     ref={(el) => { itemRefs.current[idx] = el; }}
                     tabIndex={-1}
-                    onClick={() => handleSelect(word)}
+                    onClick={() => setSelectedWord(word)}
                     className={cn(
                       "w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left transition-colors",
                       "hover:bg-accent hover:text-accent-foreground",

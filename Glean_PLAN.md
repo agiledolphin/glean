@@ -11,7 +11,7 @@
 | 产品名称 | 拾词 / Glean |
 | 目标平台 | macOS ✅、iOS（开发中）、Windows（后续） |
 | 核心用户 | 碎片化记录词汇的外语学习者 |
-| 当前版本 | macOS v0.7.1 / iOS v0.7.1 |
+| 当前版本 | macOS v0.7.2 / iOS v0.7.1 |
 | macOS 技术栈 | Tauri 2.x + Rust + React 19 + TypeScript 6 + Vite 8 |
 | iOS 技术栈 | SwiftUI + GRDB.swift 6.x + MdxKit（Swift Package） |
 | 数据存储 | SQLite（本地，两端 schema 一致）|
@@ -368,6 +368,7 @@ CREATE TABLE dictionaries (
 - [x] AI 解释支持手动保存：新增 `ai_explanations` 表，生成后点"保存"才写入（不是每次生成自动缓存），下次查同一个词直接读到缓存显示，不用重新点生成；"重新生成"不受影响，覆盖式保存
 - [x] 查词页收藏左侧的标签弹层补齐生词本弹层已有的能力：搜索 + 滚动、新建标签、重命名、设默认（星标）；两处弹层加宽、hover 显示完整标签名、默认标签星标常显
 - [x] 修复生词本标签弹层"双击改名"失效：单击会先 `selectTag()` 关闭弹层，双击的第二次点击落空——改用悬停可见的编辑图标触发改名
+- [x] 修复查词偶发跳转到"未找到"：`CandidateList.tsx` 里点击/方向键选词与监听 `selectedWord` 的 `useEffect` 会各自触发一次 `lookupWord`，两条并发请求谁先返回不确定，切词较快时后到达的响应可能对应旧词，用空结果覆盖掉刚显示的正确释义。改为只有 `selectedWord` 变化的 effect 一处触发查词（`performLookup`），点击/方向键只 `setSelectedWord`；并加入 `lookupRequestRef` 请求令牌校验（同 `DictResultPanel.tsx` 里 AI 面板已用过的 `aiRequestWordRef` 模式），过期响应直接丢弃
 - [ ] 设置页完善（发音偏好、主题等）
 
 ### Phase 5 — 背单词与进阶功能（进行中）
