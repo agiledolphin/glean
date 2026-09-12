@@ -39,7 +39,7 @@ export function SettingsPage() {
   const [showApiKey, setShowApiKey] = useState(false);
 
   const PRESETS = [
-    { label: "DeepSeek", url: "https://api.deepseek.com", model: "deepseek-v4-flash" },
+    { label: "DeepSeek", url: "https://api.deepseek.com", model: "deepseek-flash" },
     { label: "OpenAI", url: "https://api.openai.com/v1", model: "gpt-4o-mini" },
     { label: "Ollama", url: "http://localhost:11434/v1", model: "llama3" },
   ];
@@ -52,7 +52,7 @@ export function SettingsPage() {
     ]).then(([url, key, model]) => {
       setLlmBaseUrl(url ?? "https://api.deepseek.com");
       setLlmApiKey(key ?? "");
-      setLlmModel(model ?? "deepseek-v4-flash");
+      setLlmModel(model ?? "deepseek-flash");
     }).catch(() => {});
   }, []);
 

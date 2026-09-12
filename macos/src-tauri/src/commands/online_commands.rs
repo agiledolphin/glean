@@ -125,7 +125,7 @@ pub async fn ask_ai(word: String) -> Result<String, String> {
         (
             get("llm_base_url").unwrap_or_else(|| "https://api.deepseek.com".into()),
             get("llm_api_key").unwrap_or_default(),
-            get("llm_model").unwrap_or_else(|| "deepseek-v4-flash".into()),
+            get("llm_model").unwrap_or_else(|| "deepseek-flash".into()),
         )
     };
 
@@ -147,11 +147,17 @@ pub async fn ask_ai(word: String) -> Result<String, String> {
     let body = serde_json::json!({
         "model": model,
         "messages": [{ "role": "user", "content": prompt }],
-        "max_tokens": 800,
+        // Reasoning-capable models (e.g. DeepSeek's default) spend completion
+        // tokens on an internal "thinking" pass before the final answer, and
+        // that reasoning counts against this same budget. 800 was tight enough
+        // that reasoning alone could exhaust it, leaving an empty final answer
+        // with no error (finish_reason "length", content ""). Give enough room
+        // for both.
+        "max_tokens": 3000,
     });
 
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
+        .timeout(std::time::Duration::from_secs(60))
         .build()
         .map_err(|e| e.to_string())?;
 
@@ -183,6 +189,17 @@ pub async fn ask_ai(word: String) -> Result<String, String> {
         .trim_end_matches("```")
         .trim()
         .to_string();
+
+    if html.is_empty() {
+        // Most commonly a reasoning model burned its whole token budget on
+        // internal "thinking" and never got to the actual answer
+        // (finish_reason "length", message.content ""). Surface this instead
+        // of silently returning nothing.
+        let finish_reason = json["choices"][0]["finish_reason"].as_str().unwrap_or("unknown");
+        return Err(format!(
+            "AI 返回内容为空（finish_reason: {finish_reason}）。如果模型支持「思考」模式，可能是回答被截断了，可以重试，或换一个非推理模型"
+        ));
+    }
 
     Ok(html)
 }
