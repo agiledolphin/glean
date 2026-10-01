@@ -32,6 +32,18 @@ export function SettingsPage() {
     await setSetting("online_lookup_enabled", String(enabled));
   };
 
+  // Pronunciation accent preference
+  const [accent, setAccent] = useState<"us" | "gb">("us");
+  useEffect(() => {
+    getSetting("pronunciation_accent").then((v) => {
+      if (v === "gb") setAccent("gb");
+    }).catch(() => {});
+  }, []);
+  const handleAccentChange = async (value: "us" | "gb") => {
+    setAccent(value);
+    await setSetting("pronunciation_accent", value);
+  };
+
   // LLM settings
   const [llmBaseUrl, setLlmBaseUrl] = useState("");
   const [llmApiKey, setLlmApiKey] = useState("");
@@ -275,6 +287,34 @@ export function SettingsPage() {
               ))}
             </ul>
           )}
+        </section>
+
+        <Separator />
+
+        <section>
+          <h2 className="text-base font-medium mb-1">发音</h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            优先使用词典自带的对应口音发音；词典没有时，系统朗读也会跟随该口音
+          </p>
+          <div className="inline-flex rounded-lg border border-border p-0.5">
+            {([
+              { value: "us", label: "美式" },
+              { value: "gb", label: "英式" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleAccentChange(opt.value)}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-md transition-colors",
+                  accent === opt.value
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </section>
 
         <Separator />

@@ -5,7 +5,6 @@ macos/src-tauri/target/
 macos/src-tauri/gen/
 macos/.vite/
 macos/dict/
-macos/src-tauri/src/dict/
 
 # Repo root leftovers from pre-monorepo
 /dict/

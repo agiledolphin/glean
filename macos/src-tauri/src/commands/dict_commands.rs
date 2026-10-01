@@ -63,7 +63,7 @@ pub async fn debug_audio(word: String) -> Result<String, String> {
                 out.push_str(&format!("  [{id}] mdd=Some ({key_count} keys)\n"));
 
                 // Call the real lookup_audio_for_word (includes fallback scan)
-                match mdd.lookup_audio_for_word(&word) {
+                match mdd.lookup_audio_for_word(&word, "us") {
                     Ok(Some((data, ext))) => {
                         out.push_str(&format!("  lookup_audio_for_word => FOUND ({} bytes, .{})\n", data.len(), ext));
                         // Try writing temp file and spawning afplay
