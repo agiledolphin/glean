@@ -35,6 +35,8 @@ interface AppState {
   setOnlineLookupEnabled: (v: boolean) => void;
   aiEnabled: boolean;
   setAiEnabled: (v: boolean) => void;
+  theme: "light" | "dark" | "system";
+  setTheme: (v: "light" | "dark" | "system") => void;
 
   // Vocabulary
   vocabulary: VocabularyItem[];
@@ -77,6 +79,8 @@ export const useAppStore = create<AppState>((set) => ({
   setOnlineLookupEnabled: (v) => set({ onlineLookupEnabled: v }),
   aiEnabled: false,
   setAiEnabled: (v) => set({ aiEnabled: v }),
+  theme: "light",
+  setTheme: (v) => set({ theme: v }),
 
   vocabulary: [],
   setVocabulary: (items) => set({ vocabulary: items }),

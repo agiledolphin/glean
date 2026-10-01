@@ -204,7 +204,7 @@ export function Navbar() {
         onClick={() => setCurrentPage("search")}
         data-tauri-drag-region="false"
       >
-        <img src={appIcon} alt="Glean" className="w-[32px] h-[32px] shrink-0 object-contain" style={{ mixBlendMode: "multiply" }} />
+        <img src={appIcon} alt="Glean" className="w-[32px] h-[32px] shrink-0 object-contain" />
         <div className="flex flex-col leading-none gap-[4px]">
           <span className="font-serif text-[15px] font-medium text-foreground tracking-[0.05em] group-hover:text-foreground transition-colors">
             拾词

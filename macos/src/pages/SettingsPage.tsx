@@ -25,11 +25,21 @@ interface GhostState {
 }
 
 export function SettingsPage() {
-  const { dictionaries, setDictionaries, onlineLookupEnabled, setOnlineLookupEnabled, aiEnabled, setAiEnabled } = useAppStore();
+  const {
+    dictionaries, setDictionaries,
+    onlineLookupEnabled, setOnlineLookupEnabled,
+    aiEnabled, setAiEnabled,
+    theme, setTheme,
+  } = useAppStore();
 
   const handleOnlineToggle = async (enabled: boolean) => {
     setOnlineLookupEnabled(enabled);
     await setSetting("online_lookup_enabled", String(enabled));
+  };
+
+  const handleThemeChange = async (value: "light" | "dark" | "system") => {
+    setTheme(value);
+    await setSetting("theme", value);
   };
 
   // Pronunciation accent preference
@@ -292,6 +302,35 @@ export function SettingsPage() {
         <Separator />
 
         <section>
+          <h2 className="text-base font-medium mb-1">外观</h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            切换深色/浅色主题，或跟随系统设置自动切换
+          </p>
+          <div className="inline-flex rounded-lg border border-border p-0.5">
+            {([
+              { value: "light", label: "浅色" },
+              { value: "dark", label: "深色" },
+              { value: "system", label: "跟随系统" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleThemeChange(opt.value)}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-md transition-colors",
+                  theme === opt.value
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <Separator />
+
+        <section>
           <h2 className="text-base font-medium mb-1">发音</h2>
           <p className="text-xs text-muted-foreground mb-4">
             优先使用词典自带的对应口音发音；词典没有时，系统朗读也会跟随该口音
@@ -445,7 +484,7 @@ export function SettingsPage() {
           <div className="flex flex-col gap-6 py-2">
             {/* Icon + names row */}
             <div className="flex items-center justify-center gap-5">
-              <img src={appIcon} alt="拾词" className="w-20 h-20 shrink-0 object-contain" style={{ mixBlendMode: "multiply" }} />
+              <img src={appIcon} alt="拾词" className="w-20 h-20 shrink-0 object-contain" />
               <div className="flex flex-col gap-0.5 items-center">
                 <p className="text-xl font-serif font-medium tracking-[0.06em] text-foreground leading-tight">拾词</p>
                 <p className="font-display text-sm tracking-[0.3em] uppercase text-muted-foreground">Glean</p>

@@ -227,7 +227,7 @@ export function DictResultPanel() {
   if (!selectedWord && !isSearching) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-8 select-none">
-        <img src={appIcon} alt="Glean" className="w-24 h-24 object-contain" style={{ mixBlendMode: "multiply" }} />
+        <img src={appIcon} alt="Glean" className="w-24 h-24 object-contain" />
         <div className="flex flex-col items-center gap-2.5">
           <div className="flex items-center gap-4">
             <div className="w-10 h-px bg-border" />

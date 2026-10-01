@@ -10,13 +10,31 @@ import { listDictionaries, getSetting } from "@/lib/commands";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function App() {
-  const { currentPage, setDictionaries, setOnlineLookupEnabled, setAiEnabled } = useAppStore();
+  const { currentPage, setDictionaries, setOnlineLookupEnabled, setAiEnabled, theme, setTheme } = useAppStore();
 
   useEffect(() => {
     listDictionaries().then(setDictionaries).catch(() => {});
     getSetting("online_lookup_enabled").then(v => setOnlineLookupEnabled(v === "true")).catch(() => {});
     getSetting("llm_enabled").then(v => setAiEnabled(v === "true")).catch(() => {});
-  }, [setDictionaries, setOnlineLookupEnabled, setAiEnabled]);
+    getSetting("theme").then(v => {
+      if (v === "dark" || v === "system") setTheme(v);
+    }).catch(() => {});
+  }, [setDictionaries, setOnlineLookupEnabled, setAiEnabled, setTheme]);
+
+  // Apply the resolved light/dark class to <html>; when following the system,
+  // keep it live-updated as the OS preference changes.
+  useEffect(() => {
+    const root = document.documentElement;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => {
+      const isDark = theme === "dark" || (theme === "system" && mq.matches);
+      root.classList.toggle("dark", isDark);
+    };
+    apply();
+    if (theme !== "system") return;
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [theme]);
 
   // Tab cycles only between the 3 focus zones
   useEffect(() => {

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   /* Colors — reference CSS custom properties set in :root */
   --color-border: hsl(var(--border));
@@ -144,14 +146,24 @@
     to   { opacity: 1; }
   }
 
-  /* 词典富文本隔离容器 */
+  /* 词典富文本隔离容器
+     词典自带的 CSS（以及 AI 解释生成的 HTML）都是按"白底黑字"设计的——
+     标红、标蓝之类的强调色没问题，但偏灰、偏浅的辅助文字在深色背景下
+     对比度会直接消失。词典 CSS 是用户导入时带来的任意第三方样式，没法
+     逐条适配深色模式，所以这里固定用浅色"纸面"卡片呈现内容，不跟随
+     应用整体的深浅主题——和多数阅读类 App（Kindle、Apple Books 等）
+     处理正文阅读区的方式一致。 */
   .dict-content {
     all: initial;
     display: block;
     font-family: Inter, "SF Pro Text", system-ui, sans-serif;
     font-size: 14px;
     line-height: 1.7;
-    color: hsl(var(--foreground));
+    color: #100f0f;
+    background: #fffcf0;
+    border: 1px solid #dad8ce;
+    border-radius: var(--radius);
+    padding: 14px 16px;
   }
 
   .dict-content * {
